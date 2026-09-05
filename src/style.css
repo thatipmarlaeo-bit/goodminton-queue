@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.court-bg { background-color: #064e3b; position: relative; }
+.court-closed-bg { background-color: #1e293b; position: relative; }
+.court-net {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-50%);
+}
+button, input { touch-action: manipulation; }

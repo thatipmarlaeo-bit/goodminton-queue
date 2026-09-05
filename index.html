@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>ระบบคิวสนามแบดมินตัน (Real-time)</title>
+    
+    <!-- OneSignal Web Push SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "56fac8b0-471a-455c-9f01-f8271b6ab10f",
+        });
+        let devId = localStorage.getItem('bm_dev_id');
+        if (!devId) {
+          devId = 'DEV-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36).substr(4);
+          localStorage.setItem('bm_dev_id', devId);
+        }
+        await OneSignal.login(devId);
+      });
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body class="text-slate-100 min-h-screen font-sans" style="background-color: #0b0f19;">
+    <div id="app"></div>
+  </body>
+</html>
