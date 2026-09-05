@@ -224,22 +224,36 @@
           </svg>
           <div class="flex justify-between items-center">
             <span class="text-xs text-slate-400 ml-1">แผงควบคุมระบบแอดมิน</span>
+            <button @click="handleAdminLogout"class="text-xs text-rose-400 hover:text-rose-300 transition flex items-center gap-1.5 ml-4">
+              <svg class="w-auto h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              ออกจากระบบ
+            </button>
           </div>
         </div>
         <button @click="openSummaryReport" class="bg-slate-800 hover:bg-slate-700 text-xs px-3.5 py-2 rounded-xl transition font-bold text-emerald-400 border border-slate-700 flex items-center gap-1.5 shadow">
-          สรุปยอดวันนี้
+          <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/>
+          </svg>
+          <span>สรุปยอดวันนี้</span>
         </button>
-      </header>
+      </header>   
 
       <!-- แผงควบคุม 4 คอร์ด -->
       <section>
         <div class="flex justify-between items-center mb-3">
           <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">จัดการคอร์ด</h2>
-          <button 
-            @click="toggleAllCourts" 
-            class="text-xs font-bold px-3 py-1.5 rounded-lg transition shadow-md flex items-center gap-1.5" 
+          <button @click="toggleAllCourts" 
+            class="text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-md flex items-center gap-1.5" 
             :class="areAllCourtsClosed ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white border border-rose-500/30'">
-            <span>{{ areAllCourtsClosed ? 'เปิดทุกสนาม' : 'ปิดทุกสนาม (ล้างคิวทั้งหมด)' }}</span>
+            <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+              <line x1="12" y1="2" x2="12" y2="12"></line>
+            </svg>
+            <span>{{ areAllCourtsClosed ? 'เปิดทุกสนาม' : 'ปิดสนาม' }}</span>
           </button>
         </div>
 
@@ -297,26 +311,42 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2 mt-auto">
-              <div v-if="c.status === 'AVAILABLE'" class="col-span-2 text-center text-xs text-slate-500 py-2.5 bg-slate-950 rounded-xl border border-dashed border-slate-800">
+              <div v-if="c.status === 'AVAILABLE'" class="col-span-2 text-center text-xs text-slate-500 py-2.5 bg-slate-950 rounded-xl border border-dashed border-slate-800 flex items-center justify-center gap-1.5 ">
+                <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
                 ระบบรอเรียกคิวอัตโนมัติ...
               </div>
               
               <template v-else-if="c.status === 'CALLING'">
-                <button @click="startCourt(c.courtNumber)" class="col-span-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition">
-                  เริ่มเล่น
+                <button @click="startCourt(c.courtNumber)" class="col-span-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  <span>เริ่มเล่น</span>
                 </button>
-                <button @click="holdCallingQueue(c.courtNumber)" class="col-span-2 bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-slate-950 border border-amber-500/30 font-bold py-2.5 rounded-xl text-xs transition">
-                  ข้ามคิว
+                <button @click="holdCallingQueue(c.courtNumber)" class="col-span-2 bg-amber-600/20 hover:bg-amber-600 text-amber-400 hover:text-slate-950 border border-amber-500/30 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                 <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                  <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>ข้ามคิว
                 </button>
               </template>
 
               <template v-else-if="c.status === 'IN_PROGRESS'">
                 <button v-if="c.currentQueueId" 
                   @click="openSwapModal(c)"
-                  class="col-span-2 px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700 flex justify-center gap-1">
+                  class="col-span-2 px-2.5 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center justify-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 stroke-current text-amber-400" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                  </svg>
                   <span>สลับสนาม</span>
                 </button>
-                <button @click="finishCourt(c.courtNumber)" class="col-span-2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg">
+                <button @click="finishCourt(c.courtNumber)" class="col-span-2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow-lg flex items-center justify-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                  </svg>
                   จบเกม 
                 </button>
               </template>
@@ -325,6 +355,10 @@
                 @click="c.status === 'CLOSED' ? reopenCourt(c) : openCloseCourtModal(c)" 
                 class="col-span-2 border font-bold py-2 rounded-xl text-xs transition mt-1 flex items-center justify-center gap-1.5"
                 :class="c.status === 'CLOSED' ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-900/30' : 'border-rose-500/50 text-rose-400 hover:bg-rose-900/30'">
+                <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                  <line x1="12" y1="2" x2="12" y2="12"></line>
+                </svg>
                 <span>{{ c.status === 'CLOSED' ? 'เปิดคอร์ด' : 'ปิดคอร์ด' }}</span>
               </button>
             </div>
@@ -336,8 +370,12 @@
       <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h2 class="text-base font-bold text-white">ตารางจัดการคิวทั้งหมด</h2>
-          <button @click="openAddModal" :disabled="areAllCourtsClosed" class="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-lg transition">
-            เพิ่มคิวกลุ่มใหม่
+          <button @click="openAddModal" :disabled="areAllCourtsClosed" class="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-lg transition flex items-center gap-1.5">
+            <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>เพิ่มคิวกลุ่มใหม่</span>
           </button>
         </div>
 
@@ -381,7 +419,11 @@
                   <span v-else-if="q.status === 'SKIPPED'" class="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap">
                     สิทธิ์เรียกคิวแรก
                   </span>
-                  <span v-else-if="q.status === 'ON_HOLD'" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap">
+                  <span v-else-if="q.status === 'ON_HOLD'" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap flex item-center justify-center">
+                    <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                      <line x1="19" y1="5" x2="19" y2="19"></line>
+                    </svg>
                     พักคิว
                   </span>
                   <span v-else class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full text-[10px] inline-block whitespace-nowrap">
@@ -390,17 +432,39 @@
                 </td>
                 <td class="p-3 text-right">
                   <div class="flex justify-end gap-1.5" v-if="q.status !== 'ASSIGNED' && !areAllCourtsClosed">
-                    <button v-if="q.status === 'ON_HOLD' || q.status === 'SKIPPED'" @click="updateQueueStatus(q.id, 'WAITING')" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition">
-                      กลับเป็นปกติ
+                    <button v-if="q.status === 'ON_HOLD' || q.status === 'SKIPPED'" 
+                      @click="updateQueueStatus(q.id, 'WAITING')" 
+                      class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                        <path d="M3 3v5h5"/>
+                      </svg>
+                      <span>กลับเป็นปกติ</span>
                     </button>
-                    <button v-if="q.status === 'WAITING' && q.players.length === 4" @click="updateQueueStatus(q.id, 'SKIPPED')" class="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition">
-                      ดันขึ้นก่อน
+                    <button v-if="q.status === 'WAITING' && q.players.length === 4" 
+                      @click="updateQueueStatus(q.id, 'SKIPPED')" 
+                      class="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                      </svg>
+                      <span>ดันขึ้นก่อน</span>
                     </button>
-                    <button v-if="q.status === 'WAITING' || q.status === 'SKIPPED'" @click="updateQueueStatus(q.id, 'ON_HOLD')" class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1.5 rounded-lg font-bold transition">
-                      ข้ามคิว
+                    <button v-if="q.status === 'WAITING' || q.status === 'SKIPPED'" 
+                      @click="updateQueueStatus(q.id, 'ON_HOLD')" 
+                      class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                        <line x1="19" y1="5" x2="19" y2="19"></line>
+                      </svg>
+                      <span>ข้ามคิว</span>
                     </button>
-                    <button @click="deleteQueue(q.id)" class="bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition">
-                      ลบทิ้ง
+                    <button @click="deleteQueue(q.id)" 
+                      class="bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
+                      <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      <span>ลบทิ้ง</span>
                     </button>
                   </div>
                 </td>
