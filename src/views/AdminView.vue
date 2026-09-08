@@ -171,7 +171,7 @@
         </div>
       </div>
 
-      <header class="bg-slate-900 border border-slate-800 pb-3 px-4 rounded-2xl flex justify-between items-center shadow-xl">
+      <header class="bg-slate-900 border border-slate-800 pb-3 px-4 mt-2 rounded-2xl flex justify-between items-center sticky top-0 z-50 shadow-xl">
         <div>
           <svg style="width:180px; height:auto;" viewBox="0 0 87 36" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>

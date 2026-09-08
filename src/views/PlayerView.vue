@@ -33,28 +33,6 @@
       </button>
     </div>
 
-    <!-- แถบแจ้งเตือนเมื่อถึงคิวลงสนาม -->
-    <div v-if="isAlerting" class="bg-amber-500 text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-amber-300 animate-bounce flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-3xl animate-pulse">
-          <svg class="w-5 h-5 text-emerald-400 stroke-current inline-block mr-1.5" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v4M12 18a4 4 0 0 0 4-4H8a4 4 0 0 0 4 4Z"/>
-            <path d="m9 6 3 8 3-8"/>
-            <path d="m6 8 6 6 6-6"/>
-          </svg>
-        </span>
-        <div>
-          <h2 class="text-base font-black uppercase tracking-wide">ถึงคิวของคุณแล้ว!</h2>
-          <p class="text-xs font-bold">
-            {{ myActiveCourt ? 'กรุณาลงสนาม คอร์ด ' + myActiveCourt + ' ภายใน 3 นาที' : 'แอดมินกำลังเรียกคิวของคุณ' }}
-          </p>
-        </div>
-      </div>
-      <button @click="stopAlarm" class="bg-slate-950 hover:bg-slate-900 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-lg transition">
-        รับทราบ 
-      </button>
-    </div>
-
     <!-- Header -->
     <div class="gap-3 flex flex-col sticky top-0 z-50">
       <!-- แถบเมื่อสนามทั้งหมดถูกปิด -->
@@ -131,6 +109,27 @@
           </button>
         </div>
       </header>
+      <!-- แถบแจ้งเตือนเมื่อถึงคิวลงสนาม -->
+    <div v-if="isAlerting" class="bg-amber-500 text-slate-950 p-4 mt-3 rounded-2xl shadow-2xl border-2 border-amber-300 animate-[bounce_1s_infinite_reverse] flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl animate-pulse">
+          <svg class="w-5 h-5 text-emerald-400 stroke-current inline-block mr-1.5" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18a4 4 0 0 0 4-4H8a4 4 0 0 0 4 4Z"/>
+            <path d="m9 6 3 8 3-8"/>
+            <path d="m6 8 6 6 6-6"/>
+          </svg>
+        </span>
+        <div class="sticky top-0 z-30">
+          <h2 class="text-base font-black uppercase tracking-wide">ถึงคิวของคุณแล้ว!</h2>
+          <p class="text-xs font-bold">
+            {{ myActiveCourt ? 'กรุณาลงสนาม คอร์ด ' + myActiveCourt + ' ภายใน 3 นาที' : 'แอดมินกำลังเรียกคิวของคุณ' }}
+          </p>
+        </div>
+      </div>
+      <button @click="stopAlarm" class="bg-slate-950 hover:bg-slate-900 text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-lg transition">
+        รับทราบ 
+      </button>
+    </div>
     </div>
 
     <!-- ฟอร์มระบุข้อมูลก่อนเข้าใช้งานครั้งแรก -->
