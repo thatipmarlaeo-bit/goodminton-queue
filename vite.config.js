@@ -8,11 +8,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // แยกไลบรารีของ Firebase ออกเป็นไฟล์แยกต่างหาก
-          if (id.includes('node_modules/firebase')) {
-            return 'firebase-vendor'
-          }
-          // แยก Vue และ Vue Router ออกเป็นไฟล์แยก
+          // แยก Vue และ Vue Router ออกเป็นไฟล์แยก (Firebase ถูกรื้อระบบออกแล้ว)
           if (id.includes('node_modules/vue')) {
             return 'vue-vendor'
           }
