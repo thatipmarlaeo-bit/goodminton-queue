@@ -469,7 +469,7 @@
                   </span>
                   <span v-else class="flex flex-col items-center gap-0.5">
                     <span class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full text-[10px] inline-block whitespace-nowrap">
-                      {{ q.players.length === 4 ? `รอเรียก · ${getEstimatedWaitText(q)}` : `รอคน (${q.players.length}/4)` }}
+                      {{ q.players.length === 4 ? `รอ${getEstimatedWaitText(q)}` : `รอคน (${q.players.length}/4)` }}
                     </span>
                   </span>
                 </td>
@@ -579,7 +579,7 @@
       <div class="space-y-3">
         <div>
           <p class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
-            <span>ผู้ชนะ (เลือกได้สูงสุด 2 คน — เล่นเป็นทีมคู่)</span>
+            <span>ผู้ชนะ </span>
             <span class="text-[10px] text-emerald-400 font-mono">{{ selectedWinners.length }}/2</span>
           </p>
           <div v-if="finishResultPlayers.length === 0" class="text-center text-xs text-slate-500 py-6 bg-slate-950 rounded-xl border border-slate-800">
@@ -600,8 +600,6 @@
             </button>
           </div>
         </div>
-
-        <p class="text-[10px] text-slate-500 leading-relaxed">กดเลือกชื่อผู้ชนะ แล้วกด "บันทึกผล" หรือถ้าเสมอกัน (ไม่มีใครได้แต้ม) ให้กดปุ่ม "เสมอ"</p>
       </div>
 
       <div class="flex items-center gap-2 pt-1">
@@ -609,7 +607,7 @@
           class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition">ยกเลิก</button>
         <button @click="submitFinishResult(true)" :disabled="savingResult"
           class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-100 disabled:opacity-40 transition shadow">
-          เสมอ (ไม่มีใครได้แต้ม)
+          เสมอ 
         </button>
         <button @click="submitFinishResult(false)" :disabled="savingResult || selectedWinners.length === 0"
           class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-1.5">
@@ -835,34 +833,34 @@ const getRemainingTime = (court) => {
 }
 
 // ประมาณเวลารอแบบเรียลไทม์ของคิวที่ครบ 4 คน (สถานะ "รอเรียก") — ตรรกะเดียวกับ PlayerView
-//   * คอร์ดกำลังเล่น -> เหลืออีกเท่าไรกว่าจะว่าง (จับเวลา real-time)
-//   * คอร์ดกำลังเรียกคิว -> นับเป็นเต็ม 1 แมตช์
+//   * คอร์ดกำลังเล่น/กำลังเรียก -> ว่างอีกครั้งเวลา (statusUpdatedAt || now) + T (ยึดกับ wall-clock)
 //   * คอร์ดว่าง -> ว่างทันที
 //   * จองคอร์ดที่ว่างเร็วที่สุดให้คิวครบ 4 คนที่มีลำดับอยู่ก่อน (FIFO) ทีละคิว
 //     แต่ละคิวที่แซงหน้า = 1 แมตช์ (20 นาที)
 // ใช้ now.value ที่ tick ทุกวินาที -> นับถอยหลังอัตโนมัติ
 const ESTIMATED_MATCH_MINUTES = 20
+const ESTIMATED_MATCH_MS = ESTIMATED_MATCH_MINUTES * 60 * 1000
 
 const getEstimatedWaitSeconds = (queue) => {
   if (!queue || !Array.isArray(queue.players) || queue.players.length !== 4) return 0
-  const T = ESTIMATED_MATCH_MINUTES * 60
+  const T = ESTIMATED_MATCH_MS
 
-  // รายการเวลาที่แต่ละคอร์ดจะว่าง (วินาที) — 0 = ว่างอยู่แล้ว
-  const freeInSeconds = []
+  // รายการเวลาที่แต่ละคอร์ดจะว่าง (wall-clock ms) — now = ว่างอยู่แล้ว
+  const freeAt = []
   courts.value.forEach(c => {
     if (c.status === 'CLOSED') return
     if (c.status === 'AVAILABLE') {
-      freeInSeconds.push(0)
+      freeAt.push(now.value)
       return
     }
     if (c.status === 'IN_PROGRESS') {
-      const elapsed = Math.max(0, Math.floor((now.value - (c.statusUpdatedAt || Date.now())) / 1000))
-      freeInSeconds.push(Math.max(0, T - elapsed))
+      // แมตช์เล่นเกิน 20 นาทีมาแล้ว (freeAt ตกในอดีต) -> คอร์ดนี้กำลังจะว่างทันที
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value))
       return
     }
-    // CALLING -> คิวที่ถูกเรียกจะเริ่มเล่นจริง -> นับเป็นเต็ม 1 แมตช์
     if (c.status === 'CALLING') {
-      freeInSeconds.push(T)
+      // เรียกคิวแล้ว -> นับเต็ม 1 แมตช์จากตอนนี้ (กัน statusUpdatedAt ค้างอยู่ในอดีต)
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value + T))
     }
   })
 
@@ -876,13 +874,14 @@ const getEstimatedWaitSeconds = (queue) => {
   ).length
 
   // จองคอร์ดที่ว่างเร็วที่สุดให้ทีละคิวที่แซงหน้าเรา (ทุกคิวใช้เวลา 1 แมตช์)
-  freeInSeconds.sort((a, b) => a - b)
-  for (let i = 0; i < aheadCount && freeInSeconds.length > 0; i++) {
-    freeInSeconds[0] += T
-    freeInSeconds.sort((a, b) => a - b)
+  freeAt.sort((a, b) => a - b)
+  for (let i = 0; i < aheadCount && freeAt.length > 0; i++) {
+    freeAt[0] += T
+    freeAt.sort((a, b) => a - b)
   }
 
-  return freeInSeconds.length > 0 ? freeInSeconds[0] : 0
+  if (freeAt.length === 0) return 0
+  return Math.max(0, Math.ceil((freeAt[0] - now.value) / 1000))
 }
 
 const getEstimatedWaitText = (queue) => {
@@ -890,7 +889,7 @@ const getEstimatedWaitText = (queue) => {
   if (secs <= 0) return 'กำลังจะถึงคิว'
   const m = Math.floor(secs / 60)
   const s = secs % 60
-  return `ประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `ประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} น.`
 }
 
 const getPlayElapsed = (court) => {

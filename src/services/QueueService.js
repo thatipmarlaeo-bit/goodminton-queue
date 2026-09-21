@@ -402,10 +402,41 @@ export class QueueService {
   //   - plays = จำนวนครั้งที่ลงเล่นทั้งหมด (แอดมินกดจบเกมแล้วเท่านั้น)
   //   - wins  = จำนวนครั้งที่ชนะ (ถูกเลือกเป็นผู้ชนะเมื่อจบเกม)
   //   - draws = จำนวนครั้งที่เสมอ (จบเกมแต่ไม่มีใครได้แต้ม)
+  //
+  // hybrid (014): ตัวนับถาวรเก็บที่ profiles (trigger บวกให้ตอน insert
+  //   match_records) → อ่านจาก profiles ก่อน จะลบ match_records เก่า
+  //   สถิติก็ไม่หาย ส่วน fallback นับสดจาก match_records ไว้รองรับช่วงที่
+  //   ยังไม่ได้รัน 014 (คอลัมน์ plays/wins/draws ยังไม่มี)
   // ==========================================
   async getPlayerMatchStats(deviceId) {
     if (!deviceId) return { plays: 0, wins: 0, draws: 0 }
 
+    // 1) อ่านตัวนับถาวรจาก profiles
+    try {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('plays, wins, draws')
+        .eq('device_id', deviceId)
+        .maybeSingle()
+
+      if (error) throw error
+      if (data) {
+        return {
+          plays: data.plays || 0,
+          wins: data.wins || 0,
+          draws: data.draws || 0
+        }
+      }
+    } catch (err) {
+      // คอลัมน์ยังไม่มี (ยังไม่รัน 014) → ตกไปนับสดจาก match_records
+      console.warn('[QueueService] อ่านสถิติจาก profiles ไม่ได้ ใช้ match_records แทน:', err.message)
+    }
+
+    return this.countMatchStatsFromRecords(deviceId)
+  }
+
+  // fallback: นับสดจาก match_records (ใช้เมื่อยังไม่รัน 014)
+  async countMatchStatsFromRecords(deviceId) {
     const countWhere = async (query) => {
       const { count, error } = await query
       if (error) throw new Error(`ดึงสถิติไม่สำเร็จ: ${error.message}`)
