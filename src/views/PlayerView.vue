@@ -427,7 +427,7 @@
                 {{ 
                   c.status === 'AVAILABLE' ? 'ว่าง' : 
                   c.status ===  'CLOSED' ? (c.closeReason ? `${c.closeReason}` : 'คอร์ตปิดให้บริการชั่วคราว') : 
-                  c.status === 'CALLING' ? 'เรียกคิว' : 'กำลังแข่งขัน' 
+                  c.status === 'CALLING' ? 'เรียกคิว' : ('กำลังแข่งขัน · ' + getPlayElapsed(c) + ' น.')
                 }}
               </p>
             </div>
@@ -484,19 +484,21 @@
 
           <div v-for="q in supabaseActiveQueues" :key="q.id" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm dark:shadow-md hover:border-slate-300 transition-colors">
             <div class="flex justify-between items-center">
-              <span class="font-mono font-bold text-sm text-slate-800 dark:text-white">{{ q.id }}</span>
-              <span v-if="q.status === 'ASSIGNED'" class="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-bold animate-pulse">ลงคอร์ต {{ q.assignedCourt }}</span>
+              <span class="font-bold text-sm text-slate-800 dark:text-white">{{ queueService.getQueueDisplayName(q.id) }}</span>
+              <span v-if="q.status === 'ASSIGNED' || q.status === 'IN_PROGRESS'" class="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-bold animate-pulse">ลงคอร์ต {{ q.assigned_court }}</span>
+              <span v-else-if="q.status === 'CALLING'" class="text-[10px] bg-amber-50 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/40 text-amber-700 dark:text-amber-300 px-2.5 py-0.5 rounded-full font-bold animate-pulse">กำลังเรียก</span>
               <span v-else-if="q.status === 'SKIPPED'" class="text-[10px] bg-purple-50 dark:bg-purple-500/20 border border-purple-200 dark:border-purple-500/40 text-purple-700 dark:text-purple-300 px-2.5 py-0.5 rounded-full font-bold">⚡ พร้อม (สิทธิ์ก่อน)</span>
               <span v-else-if="q.status === 'ON_HOLD'" class="text-[10px] bg-amber-50 dark:bg-amber-500/20 border border-amber-200 dark:border-amber-500/40 text-amber-700 dark:text-amber-300 px-2.5 py-0.5 rounded-full font-bold">พักคิวอยู่</span>
               <span v-else class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-transparent px-2.5 py-0.5 rounded-full font-medium dark:font-normal">
-                {{ q.players.length === 4 ? 'รอคอร์ตว่าง ' : `รอคนครบ (${q.players.length}/4)` }}
+                {{ q.players.length === 4 ? getEstimatedWaitText(q) : `รอคนครบ (${q.players.length}/4)` }}
               </span>
             </div>
 
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div v-for="p in q.players" :key="p.deviceId" 
-                  class="p-2.5 rounded-xl text-sm flex items-center justify-between transition border"
-                  :class="p.deviceId === deviceId ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200'">
+              <button v-for="p in q.players" :key="p.deviceId" 
+                  @click="openPlayerInfo(p)"
+                  class="p-2.5 rounded-xl text-sm flex items-center justify-between transition border text-left w-full cursor-pointer active:scale-[0.99]"
+                  :class="p.deviceId === deviceId ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900'">
                 <div class="flex items-center gap-1.5 truncate">
                   <div class="w-4 h-4 shrink-0" v-html="getAvatarSvg(p.avatarId)"></div>
                   <span class="truncate">{{ p.name }} {{ p.deviceId === deviceId ? '(คุณ)' : '' }}</span>
@@ -507,7 +509,7 @@
                       :title="`ระดับ: ${p.skillLevel}`"
                       v-html="getSkillBadgeSvg(p.skillLevel)">
                 </span>
-              </div>
+              </button>
               <template v-for="(empty, idx) in (4 - q.players.length)" :key="empty">
                 <!-- ถ้าเป็นผู้สร้างการ์ด ให้แสดงปุ่มดึงเพื่อนเข้าคิว -->
                 <button 
@@ -582,8 +584,11 @@
                   </div>
                 </td>
                 <td class="p-3 text-center">
-                  <span v-if="q.status === 'ASSIGNED'" class="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap shadow-sm">
-                    ลงคอร์ต {{ q.assignedCourt }}
+                  <span v-if="q.status === 'ASSIGNED' || q.status === 'IN_PROGRESS'" class="bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap shadow-sm">
+                    ลงคอร์ต {{ q.assigned_court }}
+                  </span>
+                  <span v-else-if="q.status === 'CALLING'" class="bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap shadow-sm">
+                    กำลังเรียก
                   </span>
                   <span v-else-if="q.status === 'SKIPPED'" class="bg-purple-50 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block whitespace-nowrap shadow-sm">
                     ⚡ สิทธิ์เรียกคิวแรก
@@ -592,7 +597,7 @@
                     พักคิวอยู่
                   </span>
                   <span v-else class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-full text-[10px] inline-block whitespace-nowrap border border-slate-200 dark:border-slate-700 font-medium dark:font-normal shadow-sm">
-                    รอคอร์ตว่าง
+                    {{ q.players.length === 4 ? `รอเรียก${getEstimatedWaitTextShort(q)}` : `รอคน (${q.players.length}/4)` }}
                   </span>
                 </td>
               </tr>
@@ -655,6 +660,44 @@
 
     <div class="pt-2 flex justify-end">
       <button @click="showInviteModal = false" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl text-xs">
+        ปิด
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Modal ดูข้อมูลผู้เล่น (แตะชื่อ/อวาตาร์ในการ์ดคิว) -->
+<div v-if="showPlayerInfoModal && playerInfoTarget" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+    <div class="text-center space-y-3">
+      <div class="mx-auto w-20 h-20 rounded-full bg-gradient-to-b from-emerald-50 to-emerald-100 dark:from-slate-800 dark:to-slate-700 p-2 border border-slate-200 dark:border-slate-700 shadow-inner">
+        <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(playerInfoTarget.avatarId)"></div>
+      </div>
+      <div>
+        <p class="text-base font-bold text-slate-900 dark:text-white">{{ playerInfoTarget.name }}</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{{ playerInfoTarget.deviceId === deviceId ? 'คุณ' : 'ผู้เล่นในคิว' }}</p>
+      </div>
+    </div>
+
+    <div class="space-y-2">
+      <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">
+        <span class="text-xs text-slate-500 dark:text-slate-400">ประเภท</span>
+        <span class="text-xs font-bold text-slate-800 dark:text-white">{{ playerInfoTarget.role || 'นิสิต' }}</span>
+      </div>
+      <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">
+        <span class="text-xs text-slate-500 dark:text-slate-400">คณะ</span>
+        <span class="text-xs font-bold text-slate-800 dark:text-white">{{ playerInfoTarget.faculty || '-' }}</span>
+      </div>
+      <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5">
+        <span class="text-xs text-slate-500 dark:text-slate-400">ระดับฝีมือ</span>
+        <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+          <span v-if="playerInfoTarget.skillLevel" class="h-5 w-5 inline-flex items-center justify-center shrink-0 drop-shadow-sm" v-html="getSkillBadgeSvg(playerInfoTarget.skillLevel)"></span>
+          {{ getPlayerSkillLabel(playerInfoTarget.skillLevel) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="pt-1 flex justify-end">
+      <button @click="showPlayerInfoModal = false" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl text-xs">
         ปิด
       </button>
     </div>
@@ -755,6 +798,18 @@ const filteredAvailableFriends = computed(() => {
   )
 })
 const isFetchingFriends = ref(false)
+
+// State สำหรับ Modal ดูข้อมูลผู้เล่น (แตะชื่อ/อวาตาร์ในการ์ดคิว)
+const showPlayerInfoModal = ref(false)
+const playerInfoTarget = ref(null)
+const openPlayerInfo = (p) => {
+  playerInfoTarget.value = p || null
+  showPlayerInfoModal.value = !!p
+}
+const getPlayerSkillLabel = (id) => {
+  const found = SKILL_LEVELS.find(l => l.id === id)
+  return found ? found.label : (id || 'มือทั่วไป')
+}
 
 // ตรวจสอบว่าผู้ใช้ปัจจุบันเป็นคนสร้างการ์ด (สมาชิกคนแรกในการ์ด) หรือไม่
 const isQueueCreator = (queue) => {
@@ -870,6 +925,86 @@ const getRemainingTime = (court) => {
   if (!court || !court.statusUpdatedAt) return 180
   const elapsed = Math.floor((now.value - court.statusUpdatedAt) / 1000)
   return Math.max(0, 180 - elapsed)
+}
+
+// เวลาที่เล่นไปแล้วของคู่ที่กำลังแข่ง (นับจากแอดมินกดเริ่มเกม = statusUpdatedAt)
+const getPlayElapsed = (court) => {
+  if (!court || !court.statusUpdatedAt) return '00:00'
+  const elapsed = Math.max(0, Math.floor((now.value - court.statusUpdatedAt) / 1000))
+  const m = Math.floor(elapsed / 60)
+  const s = elapsed % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// ------------------------------------------------------------------
+// ประมาณเวลารอแบบเรียลไทม์ของคิวที่ครบ 4 คน (สถานะ "รอเรียก") — ตรรกะเดียวกับ AdminView
+//   * คอร์ดกำลังเล่น/กำลังเรียก -> ว่างอีกครั้งเวลา (statusUpdatedAt || now) + T (ยึดกับ wall-clock)
+//   * คอร์ดว่าง -> ว่างทันที
+//   * จองคอร์ดที่ว่างเร็วที่สุดให้คิวครบ 4 คนที่มีลำดับอยู่ก่อน (FIFO) ทีละคิว
+//     แต่ละคิวที่แซงหน้า = 1 แมตช์ (20 นาที)
+// ใช้ now.value ที่ tick ทุกวินาที -> นับถอยหลังอัตโนมัติ
+const ESTIMATED_MATCH_MINUTES = 20
+const ESTIMATED_MATCH_MS = ESTIMATED_MATCH_MINUTES * 60 * 1000
+
+const getEstimatedWaitSeconds = (queue) => {
+  if (!queue || !Array.isArray(queue.players) || queue.players.length !== 4) return 0
+  const T = ESTIMATED_MATCH_MS
+
+  // รายการเวลาที่แต่ละคอร์ดจะว่าง (wall-clock ms) — now = ว่างอยู่แล้ว
+  const freeAt = []
+  courts.value.forEach(c => {
+    if (c.status === 'CLOSED') return
+    if (c.status === 'AVAILABLE') {
+      freeAt.push(now.value)
+      return
+    }
+    if (c.status === 'IN_PROGRESS') {
+      // แมตช์เล่นเกิน 20 นาทีมาแล้ว (freeAt ตกในอดีต) -> คอร์ดนี้กำลังจะว่างทันที
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value))
+      return
+    }
+    if (c.status === 'CALLING') {
+      // เรียกคิวแล้ว -> นับเต็ม 1 แมตช์จากตอนนี้ (กัน statusUpdatedAt ค้างอยู่ในอดีต)
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value + T))
+    }
+  })
+
+  // จำนวนคิวที่ครบ 4 คน และมีลำดับอยู่ก่อนเรา (ยังรออยู่ ไม่ใช่ ASSIGNED/กำลังเล่น)
+  const aheadCount = supabaseActiveQueues.value.filter(q =>
+    q.id !== queue.id &&
+    (q.status === 'WAITING' || q.status === 'SKIPPED') &&
+    Array.isArray(q.players) &&
+    q.players.length === 4 &&
+    new Date(q.created_at).getTime() <= new Date(queue.created_at).getTime()
+  ).length
+
+  // จองคอร์ดที่ว่างเร็วที่สุดให้ทีละคิวที่แซงหน้าเรา (ทุกคิวใช้เวลา 1 แมตช์)
+  freeAt.sort((a, b) => a - b)
+  for (let i = 0; i < aheadCount && freeAt.length > 0; i++) {
+    freeAt[0] += T
+    freeAt.sort((a, b) => a - b)
+  }
+
+  if (freeAt.length === 0) return 0
+  return Math.max(0, Math.ceil((freeAt[0] - now.value) / 1000))
+}
+
+// pill บนการ์ดคิว (ผู้เล่น) — เต็มรูปแบบ
+const getEstimatedWaitText = (queue) => {
+  const secs = getEstimatedWaitSeconds(queue)
+  if (secs <= 0) return 'กำลังจะถึงคิวคุณ'
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `รอคอร์ตว่างประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} น.`
+}
+
+// เซลล์ตารางลำดับคิว — รูปสั้น (ไว้ต่อท้ายคำว่า "รอเรียก")
+const getEstimatedWaitTextShort = (queue) => {
+  const secs = getEstimatedWaitSeconds(queue)
+  if (secs <= 0) return 'กำลังจะถึงคิว'
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `ประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} น.`
 }
 
 const areAllCourtsClosed = computed(() => {
