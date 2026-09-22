@@ -532,11 +532,11 @@
         <section class="space-y-3">
           <h2 class="text-sm ml-2 font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">การ์ดคิวปัจจุบัน</h2>
           
-          <div v-if="queues.length === 0" class="text-center py-10 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-xs text-slate-500 font-medium dark:font-normal">
+          <div v-if="displayQueues.length === 0" class="text-center py-10 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-xs text-slate-500 font-medium dark:font-normal">
             {{ areAllCourtsClosed ? 'สนามปิดให้บริการทั้งหมด' : 'ยังไม่มีการ์ดคิวในระบบ กดปุ่ม "สร้างการ์ดคิวใหม่" ด้านบนเพื่อเริ่ม' }}
           </div>
 
-          <div v-for="q in supabaseActiveQueues" :key="q.id" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm dark:shadow-md hover:border-slate-300 transition-colors">
+          <div v-for="q in displayQueues" :key="q.id" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl space-y-3 shadow-sm dark:shadow-md hover:border-slate-300 transition-colors">
             <div class="flex justify-between items-center">
               <span class="font-bold text-sm text-slate-800 dark:text-white">{{ queueService.getQueueDisplayName(q.id) }}</span>
               <span v-if="q.status === 'ASSIGNED' || q.status === 'IN_PROGRESS'" class="text-[10px] bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-bold animate-pulse">ลงคอร์ต {{ q.assigned_court }}</span>
@@ -1161,8 +1161,13 @@ const isUserInAnyQueue = computed(() => {
   })
 })
 
+// คิวที่แอดมินกดเริ่มเกมแล้ว (IN_PROGRESS) ไม่ต้องแสดงในลิสต์/ตาราง — ดูได้จากกราฟิกสนาม
+const displayQueues = computed(() => {
+  return supabaseActiveQueues.value.filter(q => q.status !== 'IN_PROGRESS')
+})
+
 const fullQueues = computed(() => {
-  return supabaseActiveQueues.value.filter(q => q.players && q.players.length === 4)
+  return displayQueues.value.filter(q => q.players && q.players.length === 4)
 })
 
 const myActiveCourt = computed(() => {

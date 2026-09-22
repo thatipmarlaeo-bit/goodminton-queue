@@ -375,12 +375,26 @@ export class QueueService {
   }
 
   // ==========================================
+  // แอดมิน: บันทึกเลขลูกแบดที่ซื้อของคิวที่กำลังเล่น (IN_PROGRESS)
+  //   - เก็บที่ตาราง queues ระหว่างแข่ง (หน้าไม่ต้องโชว์เลข)
+  //   - ตอนจบเกมจะคัดลอกไป match_records ให้ (ดู recordMatchResult)
+  // ==========================================
+  async saveShuttlecockNumbers(queueId, value) {
+    const { error } = await this.client
+      .from('queues')
+      .update({ shuttlecock_nos: value || null })
+      .eq('id', queueId)
+
+    if (error) throw new Error(`บันทึกเลขลูกแบดไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
   // แอดมิน: บันทึกผลการแข่งขัน (กด "จบเกม" -> เลือกผู้ชนะ สูงสุด 2 คน หรือเสมอ)
   //   - player_device_ids = สแนปชอตสมาชิกคิวที่ลงสนามทั้งหมด (ใช้คิด "จำนวนครั้งที่เล่น")
   //   - winner_device_ids  = ผู้ชนะ (ว่าง = เสมอ) — ฝั่ง DB การันตีไม่เกิน 2 คน
   //   - queue_id unique -> จบเกมซ้อนไม่บันทึกผลซ้ำ
   // ==========================================
-  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [] }) {
+  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [], shuttlecockNos = null }) {
     const winners = [...new Set((winnerDeviceIds || []).filter(Boolean))]
     if (winners.length > 2) throw new Error('เลือกผู้ชนะได้สูงสุด 2 คน (เล่นเป็นทีมคู่)')
 
@@ -391,7 +405,8 @@ export class QueueService {
         court_number: courtNumber,
         player_device_ids: [...new Set((playerDeviceIds || []).filter(Boolean))],
         winner_device_ids: winners,
-        is_draw: winners.length === 0
+        is_draw: winners.length === 0,
+        shuttlecock_nos: shuttlecockNos || null
       })
 
     if (error) throw new Error(`บันทึกผลการแข่งขันไม่สำเร็จ: ${error.message}`)

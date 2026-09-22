@@ -318,9 +318,22 @@
             </div>
 
             <!-- กราฟิกสนาม -->
-            <div :class="c.status === 'CLOSED' ? 'court-closed-bg border-2 border-slate-700' : 'court-bg border-2 border-emerald-600/60'"
-                 class="rounded-xl h-52 p-1.5 relative flex flex-col justify-between overflow-hidden shadow-inner my-2">
+            <div :class="[c.status === 'CLOSED' ? 'court-closed-bg border-2 border-slate-700' : 'court-bg border-2 border-emerald-600/60', c.status === 'IN_PROGRESS' && c.currentQueueId ? 'cursor-pointer hover:ring-2 hover:ring-emerald-400/40 transition ring-offset-0' : 'cursor-default']"
+                 class="rounded-xl h-52 p-1.5 relative flex flex-col justify-between overflow-hidden shadow-inner my-2"
+                 @click="c.status === 'IN_PROGRESS' && c.currentQueueId ? openShuttlecockModal(c) : null"
+                 :title="c.status === 'IN_PROGRESS' && c.currentQueueId ? 'บันทึกเลขลูกแบดที่ซื้อ' : ''">
               <div class="court-net"></div>
+              
+              <div v-if="c.status === 'IN_PROGRESS' && c.currentQueueId" class="absolute top-1.5 right-1.5 z-20 bg-slate-950/80 border border-emerald-500/40 text-emerald-300 rounded-lg px-2 py-1 text-[10px] font-bold flex items-center gap-1 pointer-events-none">
+                <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="6" cy="6" r="3"></circle>
+                  <circle cx="6" cy="18" r="3"></circle>
+                  <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+                  <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+                  <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+                </svg>
+                แตะบันทึกลูกแบด
+              </div>
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
@@ -478,10 +491,10 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
-              <tr v-if="queues.length === 0">
+              <tr v-if="displayQueues.length === 0">
                 <td colspan="4" class="p-8 text-center text-slate-500 font-medium">ยังไม่มีข้อมูลการ์ดคิวในระบบ</td>
               </tr>
-              <tr v-for="(q, index) in queues" :key="q.id" class="hover:bg-slate-800/30 transition">
+              <tr v-for="(q, index) in displayQueues" :key="q.id" class="hover:bg-slate-800/30 transition">
                 <td class="p-3 font-bold text-slate-300">#{{ index + 1 }}</td>
                 <td class="p-3">
                   <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -583,6 +596,16 @@
           <div v-else class="space-y-3">
             <div v-for="m in matchHistory" :key="m.queueId" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
               <div class="flex justify-end">
+                <span v-if="m.shuttlecockNos" class="text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-700/40 px-2.5 py-1 rounded-lg font-bold mr-auto flex items-center gap-1">
+                  <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="6" cy="6" r="3"></circle>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+                    <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+                    <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+                  </svg>
+                  ลูกแบด {{ m.shuttlecockNos }}
+                </span>
                 <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg font-bold">
                   {{ m.finishedAt }}
                 </span>
@@ -652,7 +675,7 @@
     </div>
   </div>
 
-  <!-- Modal จบเกม: เลือกผู้ชนะ (สูงสุด 2 คน) หรือกดเสมอ -->
+<!-- Modal จบเกม: เลือกผู้ชนะ (สูงสุด 2 คน) หรือกดเสมอ -->
   <div v-if="showFinishResultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 space-y-4 shadow-2xl">
       <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
@@ -703,6 +726,44 @@
           class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-1.5">
           <span v-if="savingResult" class="animate-spin text-xs">⏳</span>
           <span>บันทึกผลและจบเกม</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal บันทึกเลขลูกแบดที่ซื้อ (แตะกราฟิกคอร์ดที่กำลังเล่น) -->
+  <div v-if="showShuttlecockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+        <svg class="w-5 h-5 stroke-current text-emerald-400" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="3"></circle>
+          <circle cx="6" cy="18" r="3"></circle>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+          <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+        </svg>
+        <div>
+          <h3 class="font-bold text-white text-base">บันทึกเลขลูกแบด</h3>
+          <p class="text-[10px] text-slate-400">คอร์ต {{ shuttlecockTarget?.courtNumber }} · {{ shuttlecockTarget?.queueId }}</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1.5">เลขลูกแบดที่ซื้อ (คั่นหลายเลขด้วยเครื่องหมายจุลภาค เช่น "412, 413")</label>
+        <input v-model="shuttlecockNosInput" type="text"
+               placeholder="เช่น 412, 413"
+               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:border-emerald-500 outline-none"
+               @keyup.enter="saveShuttlecock">
+        <p class="text-[10px] text-slate-500 mt-1.5">บันทึกแล้วไม่แสดงบนหน้านี้ — จะปรากฏในประวัติคิวเมื่อจบเกมแล้ว</p>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <button @click="closeShuttlecockModal" :disabled="savingShuttlecock"
+          class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition">ยกเลิก</button>
+        <button @click="saveShuttlecock" :disabled="savingShuttlecock"
+          class="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-1.5">
+          <span v-if="savingShuttlecock" class="animate-spin text-xs">⏳</span>
+          <span>บันทึก</span>
         </button>
       </div>
     </div>
@@ -1041,6 +1102,11 @@ const isUserInAnyQueue = computed(() => {
     if (q.status === 'CANCELLED' || q.status === 'FINISHED') return false
     return Array.isArray(q.players) && q.players.some(p => p.deviceId === deviceId.value)
   })
+})
+
+// คิวที่แอดมินกดเริ่มเกมแล้ว (IN_PROGRESS) ไม่ต้องแสดงในตารางจัดการคิว — ดูได้จากกราฟิกสนาม
+const displayQueues = computed(() => {
+  return queues.value.filter(q => q.status !== 'IN_PROGRESS')
 })
 
 const fullQueues = computed(() => {
@@ -1536,6 +1602,40 @@ const finishResultTarget = ref(null) // { courtNumber, queueId }
 const selectedWinners = ref([])      // device_id ของผู้ชนะ (สูงสุด 2)
 const savingResult = ref(false)
 
+// บันทึกเลขลูกแบดที่ซื้อ: แตะกราฟิกคอร์ดที่กำลังเล่น -> modal -> บันทึกที่ queues
+//   (หน้าไม่แสดงเลขระหว่างแข่ง; คัดลอกไป match_records ตอนจบเกมดูในประวัติ)
+const showShuttlecockModal = ref(false)
+const shuttlecockTarget = ref(null)  // { courtNumber, queueId }
+const shuttlecockNosInput = ref('')
+const savingShuttlecock = ref(false)
+
+const openShuttlecockModal = (c) => {
+  if (c.status !== 'IN_PROGRESS' || !c.currentQueueId) return
+  shuttlecockTarget.value = { courtNumber: c.courtNumber, queueId: c.currentQueueId }
+  const snap = supabaseActiveQueues.value.find(q => q.id === c.currentQueueId)
+  shuttlecockNosInput.value = (snap && snap.shuttlecock_nos) || ''
+  showShuttlecockModal.value = true
+}
+
+const closeShuttlecockModal = () => {
+  showShuttlecockModal.value = false
+  shuttlecockTarget.value = null
+}
+
+const saveShuttlecock = async () => {
+  const t = shuttlecockTarget.value
+  if (!t) return
+  savingShuttlecock.value = true
+  try {
+    await queueService.saveShuttlecockNumbers(t.queueId, shuttlecockNosInput.value.trim())
+    closeShuttlecockModal()
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    savingShuttlecock.value = false
+  }
+}
+
 // ดูข้อมูลพื้นฐานของผู้เล่นในคิว (แตะที่กล่องชื่อผู้เล่น -> เปิด modal)
 const showPlayerInfoModal = ref(false)
 const playerInfoTarget = ref(null)
@@ -1573,7 +1673,7 @@ const loadMatchHistory = async () => {
 
     const { data: records, error } = await supabase
       .from('match_records')
-      .select('queue_id, player_device_ids, created_at')
+      .select('queue_id, player_device_ids, created_at, shuttlecock_nos')
       .gte('created_at', start.toISOString())
       .lt('created_at', end.toISOString())
       .order('created_at', { ascending: false })
@@ -1595,6 +1695,7 @@ const loadMatchHistory = async () => {
     matchHistory.value = records.map(r => ({
       queueId: r.queue_id,
       finishedAt: formatMatchTime(r.created_at),
+      shuttlecockNos: r.shuttlecock_nos || '',
       players: (r.player_device_ids || []).map(did => {
         const prof = profileMap.get(did)
         return {
@@ -1651,11 +1752,14 @@ const submitFinishResult = async (isDraw) => {
   if (!t) return
   savingResult.value = true
   try {
+    // นำเลขลูกแบดที่บันทึกไว้ระหว่างแข่ง (ถ้ามี) ไปเก็บใน match_records เพื่อแสดงในประวัติ
+    const finishQ = queues.value.find(q => q.id === t.queueId) || supabaseActiveQueues.value.find(q => q.id === t.queueId)
     await queueService.recordMatchResult({
       courtNumber: t.courtNumber,
       queueId: t.queueId,
       playerDeviceIds: finishResultPlayers.value.map(p => p.deviceId),
-      winnerDeviceIds: isDraw ? [] : selectedWinners.value
+      winnerDeviceIds: isDraw ? [] : selectedWinners.value,
+      shuttlecockNos: (finishQ && finishQ.shuttlecock_nos) || null
     })
     showFinishResultModal.value = false
     await queueService.finishMatch(t.courtNumber, t.queueId)
