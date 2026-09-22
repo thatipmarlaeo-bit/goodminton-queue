@@ -33,6 +33,32 @@
       </button>
     </div>
 
+    <!-- แถบแนะนำติดตั้ง (เฉพาะผู้ใช้ใหม่บนมือถือที่ยังไม่ได้ Add to Home Screen) -->
+    <div v-if="showInstallTip"
+         class="border p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm dark:shadow-lg transition-colors bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300">
+      <div class="space-y-0.5">
+        <div class="flex items-center gap-2 font-bold text-xs">
+          <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span>เปิดเป็นครั้งแรกผ่านแอปอื่นใช่ไหม?</span>
+        </div>
+        <p class="text-[11px] font-medium text-emerald-700/70 dark:text-emerald-400/70">
+          ระบบอาจจำโปรไฟล์คุณไม่ได้เมื่อปิดแอป — แตะปุ่มแชร์ → "เพิ่มที่หน้าจอหลัก" แล้วเปิดผ่านไอคอนบนหน้าจอหลัก เพื่อให้ระบบจำคุณได้เสมอ
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button @click="dismissInstallTip"
+                class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-white font-bold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1 border border-slate-300 dark:border-slate-700 shadow-sm">
+          <span>รับทราบ</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="gap-3 flex flex-col sticky top-0 z-50">
       <!-- แถบเมื่อสนามทั้งหมดถูกปิด -->
@@ -119,7 +145,7 @@
                 
                 <!-- ล็อคขนาดชื่อเป็น text-xs คงที่ -->
                 <b class="text-slate-800 dark:text-white text-l leading-none whitespace-nowrap">
-                   {{ playerName || 'ยังไม่ได้ระบุ' }}
+                   {{ headerDisplayName }}
                 </b>
                 
                 <!-- ล็อคขนาดเหรียญเป็น h-5 w-5 คงที่ -->
@@ -183,11 +209,11 @@
         <h2 class="text-base font-bold text-slate-900 dark:text-white">
           {{ isEditingProfile ? 'แก้ไขข้อมูลผู้ใช้งาน' : 'ลงทะเบียนข้อมูลผู้ใช้งาน' }}
         </h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อใช้ระบุตัวตนและจัดเก็บสถิติการใช้งาน</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">**กรุณากรอกข้อมูลที่เป็นความจริง มิเช่นนั้นจะถูกแบนและลบชื่ออกจากคิว</p>
       </div>
 
       <!-- สถิติการเล่นของผู้ใช้ (แสดงเฉพาะเมื่อแก้ไขข้อมูลที่มีแอคเคาท์อยู่แล้ว) -->
-      <div v-if="isEditingProfile && playerStats" class="grid grid-cols-2 gap-2 pt-1">
+      <div v-if="isEditingProfile && playerStats" class="grid grid-cols-3 gap-2 pt-1">
         <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 text-center space-y-1">
           <span class="block text-[10px] font-bold text-slate-500 dark:text-slate-400">เล่นทั้งหมด</span>
           <span class="text-xl font-black text-slate-900 dark:text-white tabular-nums">{{ playerStats.plays }}</span>
@@ -197,6 +223,11 @@
           <span class="block text-[10px] font-bold text-emerald-600/80 dark:text-emerald-400/80">ชนะ</span>
           <span class="text-xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{{ playerStats.wins }}</span>
           <span class="block text-[10px] font-bold text-emerald-600/80 dark:text-emerald-400/80">ครั้ง</span>
+        </div>
+        <div class="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-2xl p-3 text-center space-y-1">
+          <span class="block text-[10px] font-bold text-amber-600/80 dark:text-amber-400/80">เสมอ</span>
+          <span class="text-xl font-black text-amber-600 dark:text-amber-400 tabular-nums">{{ playerStats.draws }}</span>
+          <span class="block text-[10px] font-bold text-amber-600/80 dark:text-amber-400/80">ครั้ง</span>
         </div>
       </div>
 
@@ -284,7 +315,7 @@
         <!-- ตัวเลือกระดับฝีมือผู้เล่น -->
         <div class="space-y-2 pt-1">
           <label class="text-xs font-bold text-slate-600 dark:text-slate-400 block">
-            ระดับฝีมือของผู้เล่น 
+            ระดับฝีมือของคุณ 
           </label>
           <div class="grid grid-cols-6 gap-2">
             <button 
@@ -298,7 +329,7 @@
                 : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-300 dark:hover:border-slate-700'">
               
               <!-- ตราสัญลักษณ์ SVG -->
-              <div class="w-8 h-8 flex items-center justify-center" v-html="getSkillBadgeSvg(item.id)"></div>
+              <div class="w-10 h-9 flex items-center justify-center" v-html="getSkillBadgeSvg(item.id)"></div>
               <span class="text-[10px] text-slate-500 dark:text-slate-400 leading-none">{{ item.label }}</span>
             </button>
           </div>
@@ -348,7 +379,10 @@
           <!-- หัวข้อชิดซ้าย กึ่งกลางแนวตั้ง -->
           <h2 class="ml-1 text-base font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider leading-none">
             สถานะสนามปัจจุบัน
-            <span class="normal-case text-[11px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2 py-0.5 rounded-full font-bold ml-1">ผู้เล่นตอนนี้ {{ onSiteCount }} คน</span>
+            <button @click="openOnSiteList" title="แตะเพื่อดูว่าใครอยู่บนสนามอยู่บ้าง"
+                    class="normal-case text-[11px] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-500/30 px-2 py-1 rounded-full font-bold ml-1 cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-500/30 active:scale-95 transition">
+              ผู้เล่นตอนนี้ {{ onSiteCount }} คน
+            </button>
           </h2>
 
           <!-- ปุ่มสลับโหมดชิดขวา กึ่งกลางแนวตั้ง -->
@@ -397,22 +431,42 @@
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 text-white dark:bg-black/50 backdrop-blur-sm border rounded-lg flex items-center justify-center p-2 text-center transition" 
                      :class="isMySlot(c, 0) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-black ring-1 ring-amber-400 dark:ring-0' : 'border-slate-200/50 dark:border-white/10 text-slate-800 dark:text-white'">
-                  <p class="text-sm md:text-base font-bold dark:font-black truncate drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 0) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 0)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-white/20 p-0.5 overflow-hidden shadow-sm">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 0))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-bold dark:font-black text-center truncate max-w-[64px] leading-tight drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 0) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 text-white dark:bg-black/50 backdrop-blur-sm border rounded-lg flex items-center justify-center p-2 text-center transition" 
                      :class="isMySlot(c, 1) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-black ring-1 ring-amber-400 dark:ring-0' : 'border-slate-200/50 dark:border-white/10 text-slate-800 dark:text-white'">
-                  <p class="text-sm md:text-base font-bold dark:font-black truncate drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 1) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 1)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-white/20 p-0.5 overflow-hidden shadow-sm">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 1))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-bold dark:font-black text-center truncate max-w-[64px] leading-tight drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 1) }}</p>
+                  </div>
                 </div>
               </div>
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 text-white dark:bg-black/50 backdrop-blur-sm border rounded-lg flex items-center justify-center p-2 text-center transition" 
                      :class="isMySlot(c, 2) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-black ring-1 ring-amber-400 dark:ring-0' : 'border-slate-200/50 dark:border-white/10 text-slate-800 dark:text-white'">
-                  <p class="text-sm md:text-base font-bold dark:font-black truncate drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 2) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 2)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-white/20 p-0.5 overflow-hidden shadow-sm">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 2))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-bold dark:font-black text-center truncate max-w-[64px] leading-tight drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 2) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 text-white dark:bg-black/50 backdrop-blur-sm border rounded-lg flex items-center justify-center p-2 text-center transition" 
                      :class="isMySlot(c, 3) ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-black ring-1 ring-amber-400 dark:ring-0' : 'border-slate-200/50 dark:border-white/10 text-slate-800 dark:text-white'">
-                  <p class="text-sm md:text-base font-bold dark:font-black truncate drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 3) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 3)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-white/20 p-0.5 overflow-hidden shadow-sm">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 3))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-bold dark:font-black text-center truncate max-w-[64px] leading-tight drop-shadow-sm tracking-wide">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c, 3) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -469,9 +523,9 @@
       <div v-if="activeTab === 'booking'" class="space-y-6">
         <div>
           <button @click="handleCreateQueue" 
-                  :disabled="loading || isUserInAnyQueue || areAllCourtsClosed || gpsStatus !== 'IN_RANGE'" 
+                  :disabled="loading || isUserInAnyQueue || areAllCourtsClosed || (gpsStatus !== 'IN_RANGE' && !isGpsBypass())" 
                   class="w-full bg-emerald-600 hover:bg-emerald-700 dark:hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-50 dark:disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-2xl shadow-md shadow-emerald-600/20 dark:shadow-xl flex items-center justify-center gap-2 text-sm transition">
-            {{ areAllCourtsClosed ? 'สนามปิดให้บริการทั้งหมด' : isUserInAnyQueue ? 'คุณมีชื่ออยู่ในคิวแล้ว' : gpsStatus !== 'IN_RANGE' ? 'เอ๊ะ คุณไม่ได้อยู่สนาม' : '+ สร้างการ์ดคิวใหม่' }}
+            {{ areAllCourtsClosed ? 'สนามปิดให้บริการทั้งหมด' : isUserInAnyQueue ? 'คุณมีชื่ออยู่ในคิวแล้ว' : (gpsStatus !== 'IN_RANGE' && !isGpsBypass()) ? 'เอ๊ะ คุณไม่ได้อยู่สนาม' : '+ สร้างการ์ดคิวใหม่' }}
           </button>
         </div>
 
@@ -527,7 +581,7 @@
                   :disabled="loading || isUserInAnyQueue || areAllCourtsClosed || (gpsStatus !== 'IN_RANGE' && !isGpsBypass())"
                   class="border border-dashed p-2.5 rounded-xl text-xs flex items-center justify-center font-bold transition active:scale-95"
                   :class="isUserInAnyQueue 
-                    ? 'border-slate-200 dark:border-slate-800 bg-slate-100/50  text-slate-400 cursor-not-allowed' 
+                    ? 'border-slate-200 dark:border-slate-800  text-slate-400 cursor-not-allowed' 
                     : 'border-emerald-300 bg-emerald-50 dark:bg-slate-950 hover:bg-emerald-100 text-emerald-600 dark:text-emerald-300 cursor-pointer'">
                   <span>{{ isUserInAnyQueue ? 'ติดคิวอยู่' : '+ ว่าง บวกเลย!' }}</span>
                 </button>
@@ -576,8 +630,9 @@
                 <td class="p-3">
                   <div class="flex gap-1.5 flex-wrap items-center">
                     <span v-for="p in q.players" :key="p.deviceId" 
-                          class="px-2 py-1.5 rounded-lg text-[11px] flex items-center gap-1.5 border"
-                          :class="p.deviceId === deviceId ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm'">
+                          @click="openPlayerInfo(p)" title="ดูข้อมูลผู้เล่น"
+                          class="px-2 py-1.5 rounded-lg text-[11px] flex items-center gap-1.5 border cursor-pointer transition"
+                          :class="p.deviceId === deviceId ? 'bg-emerald-50 dark:bg-emerald-950/80 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-300 font-bold shadow-sm' : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:border-emerald-400 dark:hover:border-emerald-500'">
                       <div class="w-3.5 h-3.5 shrink-0" v-html="getAvatarSvg(p.avatarId)"></div>
                       <span>{{ p.name }}</span>
                     </span>
@@ -665,6 +720,34 @@
     </div>
   </div>
 </div>
+<!-- Modal รายชื่อผู้เล่นบนสนาม (แตะ badge "ผู้เล่นตอนนี้") -->
+<div v-if="showOnSiteListModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click.self="showOnSiteListModal = false">
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+    <div class="flex items-center justify-between">
+      <p class="text-sm font-black text-slate-800 dark:text-white">ผู้เล่นตอนนี้ ({{ onSitePlayers.length }} คน)</p>
+      <button @click="showOnSiteListModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg leading-none font-bold">✕</button>
+    </div>
+    <div v-if="onSiteListLoading" class="py-8 text-center text-xs text-slate-500">กำลังโหลด...</div>
+    <div v-else-if="onSitePlayers.length === 0" class="py-8 text-center text-xs text-slate-500">ยังไม่มีผู้เล่นบนสนาม</div>
+    <div v-else class="max-h-72 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+      <div v-for="p in onSitePlayers" :key="p.deviceId" class="flex items-center gap-3 pt-2 min-w-0">
+        <div class="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-0.5 overflow-hidden shrink-0">
+          <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+        </div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold text-slate-800 dark:text-white truncate">
+            {{ p.name }}
+            <span v-if="p.deviceId === deviceId" class="text-emerald-600 dark:text-emerald-400">(คุณ)</span>
+          </p>
+          <span class="text-[10px] text-slate-500">{{ p.role }} · {{ p.faculty || '-' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="pt-2 flex justify-end">
+      <button @click="showOnSiteListModal = false" class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold px-4 py-2 rounded-xl text-xs">ปิด</button>
+    </div>
+  </div>
+</div>
 <!-- Modal ดูข้อมูลผู้เล่น (แตะชื่อ/อวาตาร์ในการ์ดคิว) -->
 <div v-if="showPlayerInfoModal && playerInfoTarget" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
   <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
@@ -712,6 +795,7 @@ import { supabase } from '../supabase'
 import { AVATAR_PRESETS, getAvatarSvg } from '../components/avatars'
 import { queueService } from '../services/QueueService'
 import { userService } from '../services/UserService'
+import { getOrCreateDeviceIdInfo, persistDeviceId, getDeviceIdSync, identityDebugInfo } from '../services/identity'
 import { validateRealName, validateNickname } from '../utils/nameValidator'
 import { useTheme } from '../composables/useTheme'
 import { SKILL_LEVELS, getSkillBadgeSvg } from '../components/skillBadges'
@@ -776,6 +860,13 @@ const isEditingProfile = ref(false)
 // สถิติการเล่นของผู้ใช้ (จำนวนครั้งที่ลงเล่น / ชนะ / เสมอ) — โหลดเมื่อเปิดหน้าแก้ไขโปรไฟล์
 const playerStats = ref(null)
 
+// ชื่อที่แสดงบนการ์ด Header — ตัดให้สั้น (ไม่เกิน 9 ตัวอักษร) เพื่อไม่ให้ชื่อยาวดันให้โลโก้/อวาตาร์เล็กลง
+const headerDisplayName = computed(() => {
+  const name = (playerName.value || '').trim() || 'ยังไม่ได้ระบุ'
+  const chars = Array.from(name)
+  return chars.length > 10 ? chars.slice(0, 8).join('') + '..' : name
+})
+
 
 // State สำหรับ Modal ดึงเพื่อนเข้าคิว
 const showInviteModal = ref(false)
@@ -805,6 +896,56 @@ const playerInfoTarget = ref(null)
 const openPlayerInfo = (p) => {
   playerInfoTarget.value = p || null
   showPlayerInfoModal.value = !!p
+}
+
+// State สำหรับ Modal รายชื่อผู้เล่นบนสนาม (แตะ badge "ผู้เล่นตอนนี้")
+const showOnSiteListModal = ref(false)
+const onSitePlayers = ref([])
+const onSiteListLoading = ref(false)
+
+const openOnSiteList = async () => {
+  onSiteListLoading.value = true
+  showOnSiteListModal.value = true
+  try {
+    let rows = []
+    if (gpsFilterEnabled.value === false) {
+      // แอดมินปิดกรอง GPS -> ใครก็ถือว่าอยู่ในสนาม -> นับ/แสดงทุกโปรไฟล์ (แหล่งเดียวกับ badge)
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('device_id, real_name, nickname, role, faculty, avatar_id')
+      if (error) throw error
+      rows = data || []
+    } else {
+      // โหมดกรอง GPS -> เฉพาะผู้ที่เช็คอิน INSIDE วันนี้ (แหล่งเดียวกับ badge)
+      const { data: insideRows, error: dcErr } = await supabase
+        .from('daily_checkins')
+        .select('device_id')
+        .eq('date', getTodayDateString())
+        .eq('status', 'INSIDE')
+      if (dcErr) throw dcErr
+      const ids = (insideRows || []).map(r => r.device_id)
+      if (ids.length) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('device_id, real_name, nickname, role, faculty, avatar_id')
+          .in('device_id', ids)
+        if (error) throw error
+        rows = data || []
+      }
+    }
+    onSitePlayers.value = rows.map(r => ({
+      deviceId: r.device_id,
+      name: r.nickname || r.real_name || 'ผู้เล่น',
+      role: r.role || 'นิสิต',
+      faculty: r.faculty || '-',
+      avatarId: r.avatar_id || 'boy-cap'
+    }))
+  } catch (err) {
+    console.error('ดึงรายชื่อผู้เล่นบนสนามไม่ได้:', err.message)
+    onSitePlayers.value = []
+  } finally {
+    onSiteListLoading.value = false
+  }
 }
 const getPlayerSkillLabel = (id) => {
   const found = SKILL_LEVELS.find(l => l.id === id)
@@ -1050,6 +1191,13 @@ const getPlayerName = (court, slotIndex) => {
   return (matchQueue && matchQueue.players && matchQueue.players[slotIndex]) ? matchQueue.players[slotIndex].name : '- ว่าง -'
 }
 
+const getPlayerAvatar = (court, slotIndex) => {
+  if (!court || !court.currentQueueId) return undefined
+  const matchQueue = queues.value.find(q => q.id === court.currentQueueId) || supabaseActiveQueues.value.find(q => q.id === court.currentQueueId)
+  const player = matchQueue && matchQueue.players ? matchQueue.players[slotIndex] : null
+  return player ? player.avatarId : undefined
+}
+
 // ---------------------------------------------------------
 // ระบบเช็คอินรายวัน (Daily Check-in)
 // ---------------------------------------------------------
@@ -1058,9 +1206,10 @@ const getTodayDateString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const getFormattedTime = () => {
-  return new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
-}
+// คอลัมน์ check_in_at/check_out_at เป็น timestamptz — ต้องเขียน ISO string เท่านั้น
+// (เคยเขียน "HH:MM น." -> Postgres reject -> INSERT เช็คอินพังเงียบทุกครั้ง
+//  -> ไม่มีแถว INSIDE เกิดเลย -> badge/ลิสต์ GPS-filter เป็น 0 เสมอ)
+const getTimestampIso = () => new Date().toISOString()
 
 const handleDailyCheckIn = async () => {
   if (!userProfile.value || !deviceId.value) return
@@ -1069,7 +1218,7 @@ const handleDailyCheckIn = async () => {
   await userService.ensureIdentity(deviceId.value)
   
   const todayStr = getTodayDateString()
-  const nowTime = getFormattedTime()
+  const nowTime = getTimestampIso()
 
   try {
     const { data: existing } = await supabase
@@ -1104,7 +1253,7 @@ const handleDailyCheckOut = async () => {
   try {
     await supabase.from('daily_checkins').update({
       status: 'OUTSIDE',
-      check_out_at: getFormattedTime()
+      check_out_at: getTimestampIso()
     })
     .eq('date', getTodayDateString())
     .eq('device_id', deviceId.value)
@@ -1211,14 +1360,10 @@ const saveName = async () => {
     return
   }
 
-  // ถ้าไม่มี deviceId ให้สร้างหรือดึงจาก LocalStorage ทันที
+  // ถ้าไม่มี deviceId ให้สร้างหรือดึงจากที่เก็บไว้ทันที (multi-store กัน iOS ตัด localStorage)
   if (!deviceId.value) {
-    let localId = localStorage.getItem('badminton_local_device_id')
-    if (!localId) {
-      localId = 'USR-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-      localStorage.setItem('badminton_local_device_id', localId)
-    }
-    deviceId.value = localId
+    deviceId.value = getDeviceIdSync() || ('USR-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36))
+    persistDeviceId(deviceId.value)
   }
 
   const prof = {
@@ -1282,7 +1427,7 @@ const handleCreateQueue = async () => {
     alert('คุณมีชื่ออยู่ในคิวแล้ว ไม่สามารถสร้างคิวใหม่ได้')
     return
   }
-  if (areAllCourtsClosed.value || gpsStatus.value !== 'IN_RANGE') return
+  if (areAllCourtsClosed.value || (gpsStatus.value !== 'IN_RANGE' && !isGpsBypass())) return
   
   loading.value = true
   try {
@@ -1377,6 +1522,10 @@ const closeDropdownDelay = () => {
 let audioCtx = null
 let alarmInterval = null
 
+// แถบแนะนำ "เพิ่มที่หน้าจอหลัก" — ตั้งค่าโดย onMounted ถ้าเพิ่งถูกสร้าง device_id ใหม่บนมือถือ
+const showInstallTip = ref(false)
+const dismissInstallTip = () => { showInstallTip.value = false }
+
 const triggerVibration = () => { if ('vibrate' in navigator) navigator.vibrate([500, 250, 500]) }
 const stopVibration = () => { if ('vibrate' in navigator) navigator.vibrate(0) }
 const unlockAudioContext = () => {
@@ -1460,21 +1609,24 @@ onMounted(async () => {
   loadCourtsData()
   fetchActiveQueuesFromSupabase()
 
-  let localId = localStorage.getItem('badminton_local_device_id')
-  
-  if (!localId) {
-    // เช็กว่ามีโปรไฟล์เก่าค้างอยู่ในเครื่องไหม ถ้ามีให้เอารหัสเดิมมาใช้
-    const oldProfile = JSON.parse(localStorage.getItem('badminton_user_profile') || '{}')
-    if (oldProfile && oldProfile.deviceId) {
-      localId = oldProfile.deviceId
-    } else {
-      // ถ้าไม่มีจริงๆ ถึงจะสร้าง USR- ใหม่
-      localId = 'USR-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-    }
-    localStorage.setItem('badminton_local_device_id', localId)
+  // ตัวตนผู้ใช้: อ่าน device_id จากหลายแหล่ง (cookie/IndexedDB/localStorage) ให้รอดจาก
+  // iOS Safari ที่ตัด localStorage เมื่อปิดแท็บ -> ไม่งั้นเปิดกลับมาจะเป็น "ผู้ใช้ใหม่" (ผี)
+  const idResolve = await getOrCreateDeviceIdInfo()
+  deviceId.value = idResolve.id
+
+  // DEBUG ตัวตน (iPhone Safari เด้ง): เปิด URL ด้วย ?bmit=1 จะแสดงว่า device_id รอดช่องไหนบ้าง
+  if (new URLSearchParams(window.location.search).has('bmit')) {
+    alert(await identityDebugInfo())
   }
-  
-  deviceId.value = localId
+
+  // แถบแนะนำ "เพิ่มที่หน้าจอหลัก": โชว์เฉพาะผู้ใช้ที่เพิ่งถูกสร้าง device_id ใหม่ (storage ถูกล้าง
+  // — เช่น เปิดผ่าน webview ของแอปสแกน/แชร์ต่อ) บนมือถือ และยังไม่ได้ติดตั้งเป็นแอป
+  const isStandalone = (typeof navigator !== 'undefined' && navigator.standalone === true) ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+  const isMobile = /iPhone|iPod|iPad|Android/i.test(navigator.userAgent) && /Mobile|iPhone OS|Android/i.test(navigator.userAgent)
+  if (idResolve.isNew && isMobile && !isStandalone) {
+    showInstallTip.value = true
+  }
 
   // 🚨 2. จัดการ Realtime Channels (ประกาศแค่ชุดเดียว)
   queueChannel = supabase
@@ -1539,7 +1691,9 @@ onMounted(async () => {
   countdownInterval = setInterval(() => { now.value = Date.now() }, 1000)
   requestLocation()
   // check-in เป็นแบบ upsert -> ลองใหม่ทุก tick กันพลาดตอนโปรไฟล์ยังไม่โหลด
+  // (A+ 2026-09-22: กันโควตา — ซ่อนแท็บ/จอปิด = ข้ามทุกงาน GPS/เช็คอิน/นับคน จนกว่ากลับมาเปิดให้ครับ)
   gpsInterval = setInterval(() => {
+    if (document.visibilityState !== 'visible') return
     requestLocation()
     if (gpsStatus.value === 'IN_RANGE') handleDailyCheckIn()
     loadOnSiteCount()
@@ -1575,12 +1729,32 @@ const handleScroll = () => {
   }
 }
 
+// รีเฟรชข้อมูลสดเมื่อกลับมาเปิดหน้า/แท็บอีกครั้ง
+// (realtime channel อาจหลุดหรือค้างตอนพักหน้าจอ -> ขอข้อมูลใหม่อีกครั้ง)
+const refreshOnVisible = () => {
+  if (document.visibilityState !== 'visible') return
+  loadCourtsData()
+  fetchActiveQueuesFromSupabase()
+  loadGpsFilterSetting()
+  loadOnSiteCount()
+  requestLocation()
+}
+
+const refreshOnPageshow = (e) => {
+  // เฉพาะคืนจาก bfcache (back/forward) — ตอนโหลดครั้งแรกไม่ต้องรีเฟรชซ้ำ
+  if (e.persisted) refreshOnVisible()
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  document.addEventListener('visibilitychange', refreshOnVisible)
+  window.addEventListener('pageshow', refreshOnPageshow)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('visibilitychange', refreshOnVisible)
+  window.removeEventListener('pageshow', refreshOnPageshow)
 })
 </script>
 <style scoped>

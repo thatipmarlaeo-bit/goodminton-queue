@@ -262,7 +262,7 @@
             :title="gpsFilterEnabled ? 'เปิดกรองพิกัด' : 'ปิดกรองพิกัด'"
             class="px-3 py-2 rounded-xl transition shadow-md flex items-center justify-center border"
             :class="gpsFilterEnabled
-              ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
+              ? 'bg-slate-800 hover:bg-slate-700 text-amber-400   border-slate-700'
               : 'bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-500'">
             <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 21s-7-4.35-7-11a7 7 0 0 1 14 0c0 6.65-7 11-7 11z"></path>
@@ -324,19 +324,39 @@
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 0) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 0)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 0))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 0) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 1) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 1)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 1))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 1) }}</p>
+                  </div>
                 </div>
               </div>
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 2) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 2)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 2))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 2) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 3) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 3)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 3))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 3) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -375,8 +395,11 @@
                 <button v-if="c.currentQueueId" 
                   @click="openSwapModal(c)"
                   class="col-span-2 px-2.5 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center justify-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 stroke-current text-amber-400" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                  <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21 16-4 4-4-4"/>
+                    <path d="M17 20V4"/>
+                    <path d="m3 8 4-4 4 4"/>
+                    <path d="M7 4v16"/>
                   </svg>
                   <span>สลับสนาม</span>
                 </button>
@@ -404,6 +427,33 @@
         </div>
       </section>
 
+      <!-- Tab Switcher: จัดการคิว / ประวัติคิว (อยู่ใต้กราฟิกสนาม) -->
+      <div class="flex gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-md">
+        <button @click="adminTab = 'manage'"
+                :class="adminTab === 'manage' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+                class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
+          <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          <span class="truncate">จัดการคิว</span>
+        </button>
+        <button @click="adminTab = 'history'"
+                :class="adminTab === 'history' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+                class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
+          <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="truncate">ประวัติคิว</span>
+        </button>
+      </div>
+
+      <template v-if="adminTab === 'manage'">
       <!-- ตารางจัดการคิว -->
       <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -434,17 +484,19 @@
               <tr v-for="(q, index) in queues" :key="q.id" class="hover:bg-slate-800/30 transition">
                 <td class="p-3 font-bold text-slate-300">#{{ index + 1 }}</td>
                 <td class="p-3">
-                  <div class="flex gap-1.5 flex-wrap items-center">
-                    <span v-for="p in q.players" :key="p.deviceId" class="px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-slate-200 text-[11px] flex items-center gap-1.5 shadow-sm">
-                      <div class="w-3.5 h-3.5 shrink-0" v-html="getAvatarSvg(p.avatarId)"></div>
-                      <span>{{ p.name }}</span>
-                      <button v-if="(q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click="removePlayer(q.id, p.deviceId)" class="text-rose-400 hover:text-white hover:bg-rose-600 rounded-full w-4 h-4 flex items-center justify-center font-bold transition">×</button>
-                    </span>
-                    <div v-if="q.players.length < 4 && (q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" class="flex items-center gap-1">
-                      <button @click="openAddPlayerPicker(q.id)" class="bg-emerald-600/90 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] font-bold shadow transition">
-                        + เพิ่มผู้เล่น
-                      </button>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div v-for="p in q.players" :key="p.deviceId" @click="openPlayerInfo(p)" title="ดูข้อมูลผู้เล่น"
+                      class="p-2.5 rounded-xl text-xs flex items-center gap-2 border cursor-pointer transition active:scale-[0.99] bg-slate-950 border-slate-700 text-slate-200 hover:border-emerald-500/60 hover:bg-slate-900">
+                      <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+                        <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+                      </div>
+                      <span class="truncate">{{ p.name }}</span>
+                      <button v-if="(q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click.stop="removePlayer(q.id, p.deviceId)" title="นำออกจากคิว" class="ml-auto shrink-0 text-rose-400 hover:text-white hover:bg-rose-600 rounded-full w-4 h-4 flex items-center justify-center font-bold transition">×</button>
                     </div>
+                    <button v-if="q.players.length < 4 && (q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click="openAddPlayerPicker(q.id)"
+                      class="min-h-full p-2.5 rounded-xl text-xs font-bold text-center border border-dashed transition active:scale-[0.99] bg-slate-900/60 border-slate-700 text-emerald-300 hover:bg-emerald-600/20 hover:border-emerald-500/70">
+                      + เพิ่มผู้เล่น
+                    </button>
                   </div>
                 </td>
                 <td class="p-3 text-center">
@@ -484,14 +536,6 @@
                       </svg>
                       <span>กลับเป็นปกติ</span>
                     </button>
-                    <button v-if="q.status === 'WAITING' && q.players.length === 4" 
-                      @click="givePriority(q.id)" 
-                      class="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
-                      <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                      </svg>
-                      <span>ดันขึ้นก่อน</span>
-                    </button>
                     <button v-if="q.status === 'WAITING' || q.status === 'SKIPPED'" 
                       @click="holdQueue(q.id)" 
                       class="bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
@@ -516,6 +560,47 @@
           </table>
         </div>
       </section>
+      </template>
+
+      <!-- แทบประวัติ: คิวที่เล่นจบแล้ววันนี้ (ชื่อ + อวาตาร์ + เวลาจบ; แตะชื่อดูข้อมูลผู้เล่น) -->
+      <template v-if="adminTab === 'history'">
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <h2 class="text-base font-bold text-white">ประวัติคิวที่เล่นจบแล้ว (วันนี้)</h2>
+            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs px-3 py-2 rounded-xl font-bold">
+              {{ matchHistory.length }} เกม
+            </span>
+          </div>
+
+          <div v-if="isHistoryLoading" class="py-10 text-center text-xs text-slate-400">
+            กำลังโหลดประวัติ...
+          </div>
+
+          <div v-else-if="matchHistory.length === 0" class="py-10 text-center text-xs text-slate-500">
+            ยังไม่มีคิวที่เล่นจบแล้วในวันนี้
+          </div>
+
+          <div v-else class="space-y-3">
+            <div v-for="m in matchHistory" :key="m.queueId" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              <div class="flex justify-end">
+                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg font-bold">
+                  {{ m.finishedAt }}
+                </span>
+              </div>
+              <!-- การ์ดผู้เล่นแบบ 2 แถว (จอมือถือ) / แถวเดียว (จอใหญ่ไอแพดขึ้นไป) — เดียวกับการ์ดคิวในหน้าผู้ใช้ -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button v-for="p in m.players" :key="p.deviceId" @click="openPlayerInfo(p)" title="ดูข้อมูลผู้เล่น"
+                        class="p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99] bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60 cursor-pointer">
+                  <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+                    <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+                  </div>
+                  <span class="truncate">{{ p.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
     </div>
   </div>
 
@@ -555,7 +640,12 @@
       <div class="flex items-center gap-2 pt-2">
         <button @click="showSwapModal = false" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300">ยกเลิก</button>
         <button @click="handleConfirmSwap" :disabled="isSwapping" class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50 transition shadow-lg flex items-center justify-center gap-1.5">
-          <span v-if="isSwapping" class="animate-spin text-xs">⏳</span>
+          <span v-if="isSwapping" class="animate-spin text-xs">
+            <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+                    </span>
           <span>ยืนยันสลับ</span>
         </button>
       </div>
@@ -692,16 +782,56 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal ดูข้อมูลผู้เล่นในคิว (แตะที่กล่องชื่อผู้เล่น) -->
+  <div v-if="showPlayerInfoModal && playerInfoTarget" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+      <div class="text-center space-y-3">
+        <div class="mx-auto w-20 h-20 rounded-full bg-slate-800 p-2 border border-slate-700 shadow-inner">
+          <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(playerInfoTarget.avatarId)"></div>
+        </div>
+        <div>
+          <p class="text-base font-bold text-white">{{ playerInfoTarget.name }}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">{{ playerInfoTarget.deviceId === deviceId ? 'คุณ' : 'ผู้เล่นในคิว' }}</p>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">ประเภท</span>
+          <span class="text-xs font-bold text-white">{{ playerInfoTarget.role || 'นิสิต' }}</span>
+        </div>
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">คณะ</span>
+          <span class="text-xs font-bold text-white">{{ playerInfoTarget.faculty || '-' }}</span>
+        </div>
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">ระดับฝีมือ</span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold text-white">
+            <span v-if="playerInfoTarget.skillLevel" class="h-5 w-5 inline-flex items-center justify-center shrink-0 drop-shadow-sm" v-html="getSkillBadgeSvg(playerInfoTarget.skillLevel)"></span>
+            {{ getPlayerSkillLabel(playerInfoTarget.skillLevel) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="pt-1 flex justify-end">
+        <button @click="showPlayerInfoModal = false" class="bg-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs hover:bg-slate-700 active:scale-95 transition">
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import html2pdf from 'html2pdf.js'
 // 🚨 ลบการ import Firebase Auth ออกทั้งหมด เพื่อแก้บั๊กข้อมูลชนกัน
 import { supabase } from '../supabase'
 import { AVATAR_PRESETS, getAvatarSvg } from '../components/avatars'
 import { queueService } from '../services/QueueService'
 import { userService } from '../services/UserService'
+import { getOrCreateDeviceId } from '../services/identity'
 import { useTheme } from '../composables/useTheme'
 import { SKILL_LEVELS, getSkillBadgeSvg } from '../components/skillBadges'
 import { readGpsCache, writeGpsCache, isGpsCacheFresh } from '../composables/useGpsCache'
@@ -749,7 +879,7 @@ const toggleGpsFilter = async () => {
 
 const courts = ref([])
 const queues = ref([])
-const activeTab = ref('booking')
+const adminTab = ref('manage')
 const loading = ref(false)
 const isAlerting = ref(false)
 
@@ -944,6 +1074,13 @@ const getPlayerName = (court, slotIndex) => {
   return (matchQueue && matchQueue.players && matchQueue.players[slotIndex]) ? matchQueue.players[slotIndex].name : '- ว่าง -'
 }
 
+const getPlayerAvatar = (court, slotIndex) => {
+  if (!court || !court.currentQueueId) return undefined
+  const matchQueue = queues.value.find(q => q.id === court.currentQueueId) || supabaseActiveQueues.value.find(q => q.id === court.currentQueueId)
+  const player = matchQueue && matchQueue.players ? matchQueue.players[slotIndex] : null
+  return player ? player.avatarId : undefined
+}
+
 const getTodayDateString = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -956,15 +1093,24 @@ const getNextDayString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const getFormattedTime = () => {
-  return new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+// คอลัมน์ check_in_at/check_out_at เป็น timestamptz — ต้องเขียน ISO string เท่านั้น
+// (เคยเขียน "HH:MM น." -> Postgres reject -> INSERT เช็คอินพังเงียบทุกครั้ง
+//  -> ไม่มีแถว INSIDE เกิดเลย -> badge/ลิสต์ GPS-filter เป็น 0 เสมอ)
+const getTimestampIso = () => new Date().toISOString()
+
+// format timestamptz -> แสดงผลเป็น "HH:MM น." สำหรับรายงานรายวัน
+const formatCheckinTime = (ts) => {
+  if (!ts) return null
+  const d = Number.isFinite(Number(ts)) ? new Date(Number(ts)) : new Date(ts)
+  if (Number.isNaN(d.getTime())) return String(ts)
+  return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
 }
 
 const handleDailyCheckIn = async () => {
   if (!userProfile.value || !deviceId.value) return
   
   const todayStr = getTodayDateString()
-  const nowTime = getFormattedTime()
+  const nowTime = getTimestampIso()
 
   try {
     const { data: existing } = await supabase
@@ -1002,7 +1148,7 @@ const handleDailyCheckOut = async () => {
   try {
     await supabase.from('daily_checkins').update({
       status: 'OUTSIDE',
-      check_out_at: getFormattedTime()
+      check_out_at: getTimestampIso()
     })
     .gte('date', getTodayDateString())
     .lt('date', getNextDayString())
@@ -1216,6 +1362,7 @@ const handleLeaveQueue = async (queueId) => {
 
 const refreshAll = async () => {
   await Promise.all([loadCourtsData(), fetchActiveQueuesFromSupabase()])
+  if (adminTab.value === 'history') loadMatchHistory()
 }
 
 // ==========================================
@@ -1297,8 +1444,8 @@ const openSummaryReport = async () => {
         nickname: r.nickname,
         role: (prof && prof.role) || r.role || 'นิสิต',
         faculty: (prof && prof.faculty) || r.faculty || '-',
-        checkInAt: r.check_in_at,
-        checkOutAt: r.check_out_at || null
+        checkInAt: formatCheckinTime(r.check_in_at),
+        checkOutAt: formatCheckinTime(r.check_out_at)
       }
     })
     dailyCheckinRecords.value = rows
@@ -1388,6 +1535,90 @@ const showFinishResultModal = ref(false)
 const finishResultTarget = ref(null) // { courtNumber, queueId }
 const selectedWinners = ref([])      // device_id ของผู้ชนะ (สูงสุด 2)
 const savingResult = ref(false)
+
+// ดูข้อมูลพื้นฐานของผู้เล่นในคิว (แตะที่กล่องชื่อผู้เล่น -> เปิด modal)
+const showPlayerInfoModal = ref(false)
+const playerInfoTarget = ref(null)
+const openPlayerInfo = (p) => {
+  playerInfoTarget.value = p || null
+  showPlayerInfoModal.value = !!p
+}
+const getPlayerSkillLabel = (id) => {
+  const found = SKILL_LEVELS.find(l => l.id === id)
+  return found ? found.label : (id || 'มือทั่วไป')
+}
+
+// ==========================================
+// แทบ "ประวัติคิว": คิวที่เล่นจบแล้ววันนี้ (จาก match_records)
+//   - match_records เก็บแค่ device_id (สแนปชอต) ไม่เก็บชื่อ -> join เอา
+//     ชื่อ/อวาตาร์/role/faculty/skill จาก profiles ณ เวลาที่เปิดแทบนี้
+//   - ขอบเขต "วันนี้" ใช้ local midnight -> ISO (timestamptz ทำงานตรงกับ UTC)
+// ==========================================
+const matchHistory = ref([])
+const isHistoryLoading = ref(false)
+
+const formatMatchTime = (ts) => {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return String(ts)
+  return d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' น.'
+}
+
+const loadMatchHistory = async () => {
+  isHistoryLoading.value = true
+  try {
+    const start = new Date()
+    start.setHours(0, 0, 0, 0)
+    const end = new Date(start.getTime() + 86400000)
+
+    const { data: records, error } = await supabase
+      .from('match_records')
+      .select('queue_id, player_device_ids, created_at')
+      .gte('created_at', start.toISOString())
+      .lt('created_at', end.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    if (!records || records.length === 0) {
+      matchHistory.value = []
+      return
+    }
+
+    const ids = [...new Set((records || []).flatMap(r => r.player_device_ids || []).filter(Boolean))]
+    const { data: profs, error: pErr } = await supabase
+      .from('profiles')
+      .select('device_id, nickname, avatar_id, role, faculty, skill_level')
+      .in('device_id', ids)
+    if (pErr) throw pErr
+    const profileMap = new Map((profs || []).map(p => [p.device_id, p]))
+
+    matchHistory.value = records.map(r => ({
+      queueId: r.queue_id,
+      finishedAt: formatMatchTime(r.created_at),
+      players: (r.player_device_ids || []).map(did => {
+        const prof = profileMap.get(did)
+        return {
+          deviceId: did,
+          name: prof ? (prof.nickname || 'ผู้เล่น') : 'ไม่พบโปรไฟล์',
+          avatarId: prof && prof.avatar_id ? prof.avatar_id : 'boy-cap',
+          role: prof ? prof.role : undefined,
+          faculty: prof ? prof.faculty : undefined,
+          skillLevel: prof ? prof.skill_level : undefined
+        }
+      })
+    }))
+  } catch (err) {
+    console.error('[AdminView] โหลดประวัติคิวไม่สำเร็จ:', err.message)
+    matchHistory.value = []
+  } finally {
+    isHistoryLoading.value = false
+  }
+}
+
+// เข้าสู่แทบประวัติ -> โหลดข้อมูลสด (ประวัติวันนี้อาจมีเกมใหม่ระหว่างอยู่แทบจัดการ)
+watch(adminTab, (v) => {
+  if (v === 'history') loadMatchHistory()
+})
 
 const finishResultPlayers = computed(() => {
   const t = finishResultTarget.value
@@ -1521,30 +1752,12 @@ const reopenCourt = async (c) => {
 }
 
 // ==========================================
-// จัดการคิว: พัก / ดันขึ้น / กลับปกติ / ลบ / จัดการสมาชิก
+// จัดการคิว: พัก / กลับปกติ / ลบ / จัดการสมาชิก
 // ==========================================
 const resumeQueue = async (queueId) => {
   loading.value = true
   try {
     await queueService.updateQueueStatus(queueId, 'WAITING')
-    await refreshAll()
-  } catch (err) {
-    alert(err.message)
-  } finally {
-    loading.value = false
-  }
-}
-
-const givePriority = async (queueId) => {
-  const q = queues.value.find(x => x.id === queueId)
-  if (!q || !q.players || q.players.length < 4) {
-    alert('ต้องให้สมาชิกครบ 4 คนก่อน จึงจะดันขึ้นเป็นสิทธิ์เรียกก่อนได้')
-    return
-  }
-  if (!confirm('ดันคิว ' + queueId + ' ขึ้นเป็นสิทธิ์เรียกก่อน?')) return
-  loading.value = true
-  try {
-    await queueService.updateQueueStatus(queueId, 'SKIPPED')
     await refreshAll()
   } catch (err) {
     alert(err.message)
@@ -1848,13 +2061,9 @@ const stopAlarm = () => {
 }
 
 onMounted(async () => {
-  // 🚨 1. จัดการ Device ID เบ็ดเสร็จในเครื่อง (เลิกพึ่ง Firebase)
-  let localId = localStorage.getItem('badminton_local_device_id')
-  if (!localId) {
-    localId = 'USR-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-    localStorage.setItem('badminton_local_device_id', localId)
-  }
-  deviceId.value = localId
+  // 🚨 1. จัดการ Device ID เบ็ดเสร็จในเครื่อง (multi-store: cookie/IndexedDB/localStorage
+  //    กัน iOS Safari ที่ตัด localStorage เมื่อปิดแท็บ -> ไม่งั้นกลับมาจะเป็น "ผู้ใช้ใหม่")
+  deviceId.value = await getOrCreateDeviceId()
 
   // 🚨 2. โหลดโปรไฟล์เดิมจากฐานข้อมูล (ถ้ามี)
   try {
@@ -1942,12 +2151,30 @@ const handleScroll = () => {
   }
 }
 
+// รีเฟรชข้อมูลสดเมื่อกลับมาเปิดหน้า/แท็บอีกครั้ง
+// (realtime channel อาจหลุดหรือค้างตอนพักหน้าจอ -> ขอข้อมูลใหม่อีกครั้ง)
+const refreshOnVisible = () => {
+  if (document.visibilityState !== 'visible') return
+  refreshAll()
+  loadGpsFilterSetting()
+  requestLocation()
+}
+
+const refreshOnPageshow = (e) => {
+  // เฉพาะคืนจาก bfcache (back/forward) — ตอนโหลดครั้งแรกไม่ต้องรีเฟรชซ้ำ
+  if (e.persisted) refreshOnVisible()
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  document.addEventListener('visibilitychange', refreshOnVisible)
+  window.addEventListener('pageshow', refreshOnPageshow)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('visibilitychange', refreshOnVisible)
+  window.removeEventListener('pageshow', refreshOnPageshow)
 })
 </script>
 <style scoped>
