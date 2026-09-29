@@ -1,10 +1,17 @@
 // src/services/QueueService.js
 import { supabase } from '../supabase'
+import { BaseService } from './BaseService'
+import { Queue } from '../models/Queue'
 
-export class QueueService {
+export class QueueService extends BaseService {
   constructor(client = supabase) {
-    this.client = client
+    super(client)
     this.channel = null
+  }
+
+  // Polymorphism: override คืนชื่อตารางของ service นี้
+  getTableName() {
+    return 'queues'
   }
 
   // ==========================================
@@ -18,7 +25,7 @@ export class QueueService {
         .select('*')
 
       if (error) throw new Error(`[QueueService.getActiveQueues]: ${error.message}`)
-      return data || []
+      return (data || []).map(row => new Queue(row))
     } catch (err) {
       console.error(err)
       throw err
@@ -136,7 +143,7 @@ export class QueueService {
 
       // ตรวจประวัติ: ชื่อนี้เคยใช้ไปแล้วในตารางไหม (กัน PK ชนกับคิวที่จบไปแล้ว)
       const { data: existing } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .select('id')
         .eq('id', country)
         .maybeSingle()
@@ -148,7 +155,7 @@ export class QueueService {
         if (usedDisplayNames.has(suffixed)) continue
 
         const { data: taken } = await this.client
-          .from('queues')
+          .from(this.getTableName())
           .select('id')
           .eq('id', suffixed)
           .maybeSingle()
@@ -169,7 +176,7 @@ export class QueueService {
       newQueueId = await this.generateQueueId()
 
       const { error } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .insert({
           id: newQueueId,
           status: 'WAITING',
@@ -245,7 +252,7 @@ export class QueueService {
     // 3. ถ้าเหลือ 0 คน อัปเดตสถานะเป็น CANCELLED โดยไม่ส่ง updated_at
     if (count === 0) {
       const { error: cancelErr } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .update({ status: 'CANCELLED' })
         .eq('id', queueId)
 
@@ -277,7 +284,7 @@ export class QueueService {
 
     // นำ updated_at ออก
     const { error: queueErr } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({
         status: 'ASSIGNED',
         assigned_court: courtNumber
@@ -300,7 +307,7 @@ export class QueueService {
 
     // นำ updated_at ออก
     const { error: queueErr } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ status: 'IN_PROGRESS' })
       .eq('id', queueId)
 
@@ -323,7 +330,7 @@ export class QueueService {
     // หน้าจอส่งคิว "เก่า" มา แต่คอร์ดถูกคิวใหม่ยึดไปแล้ว -> จบคิวเก่าให้จบ แต่ห้ามแตะคอร์ด
     if (queueId && currentQid && currentQid !== queueId) {
       const { error: staleErr } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .update({ status: 'FINISHED' })
         .eq('id', queueId)
       if (staleErr) throw staleErr
@@ -333,7 +340,7 @@ export class QueueService {
     // จบคิวที่อยู่บนคอร์ดจริง ๆ
     if (currentQid) {
       const { error: queueErr } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .update({ status: 'FINISHED' })
         .eq('id', currentQid)
 
@@ -357,7 +364,7 @@ export class QueueService {
   async updateQueueStatus(queueId, status) {
     // นำ updated_at ออก
     const { error } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ status: status })
       .eq('id', queueId)
 
@@ -367,7 +374,7 @@ export class QueueService {
   async cancelQueueByAdmin(queueId) {
     // นำ updated_at ออก
     const { error } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ status: 'CANCELLED' })
       .eq('id', queueId)
 
@@ -381,7 +388,7 @@ export class QueueService {
   // ==========================================
   async saveShuttlecockNumbers(queueId, value) {
     const { error } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ shuttlecock_nos: value || null })
       .eq('id', queueId)
 
@@ -409,7 +416,7 @@ export class QueueService {
   // ==========================================
   async saveQueuePaid(queueId, paidDeviceIds) {
     const { error } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ paid_player_ids: [...new Set((paidDeviceIds || []).filter(Boolean))] })
       .eq('id', queueId)
 
@@ -668,7 +675,7 @@ export class QueueService {
     // เหลือ 0 คน -> ยกเลิกการ์ดคิวทิ้ง
     if (count <= 1) {
       const { error: cancelErr } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .update({ status: 'CANCELLED' })
         .eq('id', queueId)
 
@@ -705,10 +712,10 @@ export class QueueService {
       .eq('court_number', dst.court_number)
 
     if (src.current_queue_id) {
-      await this.client.from('queues').update({ assigned_court: targetCourtNumber }).eq('id', src.current_queue_id)
+      await this.client.from(this.getTableName()).update({ assigned_court: targetCourtNumber }).eq('id', src.current_queue_id)
     }
     if (dst.current_queue_id) {
-      await this.client.from('queues').update({ assigned_court: sourceCourtNumber }).eq('id', dst.current_queue_id)
+      await this.client.from(this.getTableName()).update({ assigned_court: sourceCourtNumber }).eq('id', dst.current_queue_id)
     }
   }
 
@@ -733,7 +740,7 @@ export class QueueService {
     for (const c of rows || []) {
       if (c.status !== 'AVAILABLE' && c.status !== 'CLOSED' && c.current_queue_id) {
         await this.client
-          .from('queues')
+          .from(this.getTableName())
           .update({ status: 'FINISHED' })
           .eq('id', c.current_queue_id)
       }
@@ -745,7 +752,7 @@ export class QueueService {
     //    - WAITING/SKIPPED/ON_HOLD/CALLING (ยังรออยู่) = ยกเลิกทิ้ง (CANCELLED)
     const active = ['WAITING', 'SKIPPED', 'ON_HOLD', 'CALLING', 'ASSIGNED', 'IN_PROGRESS']
     const { data: pending, error: pendingErr } = await this.client
-      .from('queues')
+      .from(this.getTableName())
       .select('id, status')
       .in('status', active)
 
@@ -754,7 +761,7 @@ export class QueueService {
     for (const q of pending || []) {
       const finished = q.status === 'ASSIGNED' || q.status === 'IN_PROGRESS'
       await this.client
-        .from('queues')
+        .from(this.getTableName())
         .update({ status: finished ? 'FINISHED' : 'CANCELLED' })
         .eq('id', q.id)
     }
@@ -805,7 +812,7 @@ export class QueueService {
       // คอร์ดกำลังเล่น/เรียกอยู่ -> ปลดคิวกลับเป็น ON_HOLD ก่อนปิด
       if (court.status !== 'AVAILABLE' && court.current_queue_id) {
         await this.client
-          .from('queues')
+          .from(this.getTableName())
           .update({ status: 'ON_HOLD', assigned_court: null })
           .eq('id', court.current_queue_id)
       }
@@ -842,7 +849,7 @@ export class QueueService {
     if (!court || !court.current_queue_id) throw new Error('ไม่มีคิวที่ถูกเรียกอยู่บนคอร์ตนี้')
 
     await this.client
-      .from('queues')
+      .from(this.getTableName())
       .update({ status: 'ON_HOLD', assigned_court: null })
       .eq('id', court.current_queue_id)
 
@@ -868,7 +875,7 @@ export class QueueService {
       newQueueId = await this.generateQueueId()
 
       const { error } = await this.client
-        .from('queues')
+        .from(this.getTableName())
         .insert({
           id: newQueueId,
           status: 'WAITING',

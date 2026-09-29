@@ -1,9 +1,15 @@
 // src/services/UserService.js
 import { supabase } from '../supabase'
+import { BaseService } from './BaseService'
 
-export class UserService {
+export class UserService extends BaseService {
   constructor(client = supabase) {
-    this.client = client
+    super(client)
+  }
+
+  // Polymorphism: override คืนชื่อตารางของ service นี้
+  getTableName() {
+    return 'profiles'
   }
 
   /**
@@ -33,7 +39,7 @@ export class UserService {
     }
 
     const { data, error } = await this.client
-      .from('profiles')
+      .from(this.getTableName())
       .upsert(payload, { onConflict: 'device_id' })
 
     if (error) throw error
@@ -49,7 +55,7 @@ export class UserService {
 
     try {
       const { data, error } = await this.client
-        .from('profiles')
+        .from(this.getTableName())
         .select('*')
         .eq('device_id', deviceId)
         .maybeSingle()
@@ -82,7 +88,7 @@ export class UserService {
     if (!deviceId) return
     try {
       await this.client
-        .from('profiles')
+        .from(this.getTableName())
         .upsert(
           { device_id: deviceId, nickname: fallbackName, updated_at: new Date().toISOString() },
           { onConflict: 'device_id', ignoreDuplicates: true }
