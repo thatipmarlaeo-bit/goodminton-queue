@@ -15,7 +15,7 @@
         </div>
         <p class="text-[11px] font-medium" :class="gpsStatus === 'OUT_OF_RANGE' ? 'text-amber-700/70 dark:text-amber-400/70' : 'text-rose-700/70 dark:text-rose-400/70'">
           {{ gpsStatus === 'OUT_OF_RANGE' 
-              ? `สามารถเช็กสถานะสนามและคิวได้ แต่ต้องอยู่ในระยะสนามจึงจะลงชื่อหรือจองคิวได้ (ห่าง ~${userDistance} ม.)` 
+              ? `ไม่สามารถลงชื่อได้หากอยู่นอกสนาม` 
               : 'เปิดสิทธิ์ระบุตำแหน่งเพื่อปลดล็อกการสร้างและแจมคิว' }}
         </p>
       </div>
@@ -424,7 +424,7 @@
             </div>
 
             <!-- กราฟิกสนาม -->
-            <div :class="c.status === 'CLOSED' ? 'court-closed-bg border-2 border-slate-300 dark:border-slate-700' : 'court-bg border-2 border-emerald-500/40 dark:border-emerald-600/60'"
+            <div :class="c.status === 'CLOSED' ? 'court-closed-bg border-2 dark:border-slate-700' : 'court-bg border-2 border-emerald-500/40 dark:border-emerald-600/60'"
                  class="rounded-xl h-52 p-1.5 relative flex flex-col justify-between overflow-hidden shadow-inner my-2">
               <div class="court-net opacity-60 dark:opacity-100"></div>
               
@@ -492,7 +492,7 @@
       <!-- 2. Tab Switcher -->
       <div class="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm dark:shadow-md sticky top-4 z-20 transition-colors">
         <button @click="activeTab = 'booking'" 
-                :class="activeTab === 'booking' ? 'bg-emerald-600 text-white shadow-md dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800'"
+                :class="activeTab === 'booking' ? 'bg-emerald-500 text-white shadow-md dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800'"
                 class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
           <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -505,7 +505,7 @@
           <span class="truncate">สร้าง/แจมคิว</span>
         </button>
         <button @click="activeTab = 'table'" 
-                :class="activeTab === 'table' ? 'bg-emerald-600 text-white shadow-md dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800'"
+                :class="activeTab === 'table' ? 'bg-emerald-500 text-white shadow-md dark:shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-800'"
                 class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
           <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="10" y1="6" x2="21" y2="6"></line>
@@ -846,6 +846,7 @@ const gpsStatus = ref('CHECKING')
 const isCheckingGps = ref(false)
 const userDistance = ref(0)
 const lastGpsState = ref(null)
+let checkInSucceededDate = ''
 
 const deviceId = ref('')
 const playerName = ref('')
@@ -1162,8 +1163,12 @@ const isUserInAnyQueue = computed(() => {
 })
 
 // คิวที่แอดมินกดเริ่มเกมแล้ว (IN_PROGRESS) ไม่ต้องแสดงในลิสต์/ตาราง — ดูได้จากกราฟิกสนาม
+// กัน mismatch: คิว status=ASSIGNED แต่อยู่บนคอร์ด IN_PROGRESS (swapCourts ไม่ sync สถานะคิว) -> ต้องซ่อนตามคอร์ดด้วย
 const displayQueues = computed(() => {
-  return supabaseActiveQueues.value.filter(q => q.status !== 'IN_PROGRESS')
+  const playingQIds = new Set(courts.value
+    .filter(c => c.status === 'IN_PROGRESS' && c.currentQueueId)
+    .map(c => c.currentQueueId))
+  return supabaseActiveQueues.value.filter(q => q.status !== 'IN_PROGRESS' && !playingQIds.has(q.id))
 })
 
 const fullQueues = computed(() => {
@@ -1250,6 +1255,7 @@ const handleDailyCheckIn = async () => {
         last_active_at: Date.now()
       })
     }
+    checkInSucceededDate = todayStr
   } catch (err) { console.error("Check-in error:", err) }
 }
 
@@ -1262,7 +1268,8 @@ const handleDailyCheckOut = async () => {
     })
     .eq('date', getTodayDateString())
     .eq('device_id', deviceId.value)
-    .is('check_out_at', null) 
+    .is('check_out_at', null)
+    checkInSucceededDate = '' 
   } catch (err) { console.error("Check-out error:", err) }
 }
 
@@ -1274,6 +1281,12 @@ const onSiteCount = ref(0)
 
 const loadOnSiteCount = async () => {
   try {
+    // สนามปิดทั้งหมด = ไม่มีใครอยู่บนสนาม (admin ปิดสนาม -> ทุกคน OUTSIDE ผ่าน closeAllCourts step 4)
+    // กันกรณีเครื่องผู้เล่น build เก่า/ค้างเช็คอินกลับเป็น INSIDE หลังปิดสนามแล้ว
+    if (areAllCourtsClosed.value) {
+      onSiteCount.value = 0
+      return
+    }
     if (gpsFilterEnabled.value === false) {
       // แอดมินปิดกรอง GPS -> ทุกคนผ่านการกรอง -> นับทุกโปรไฟล์
       const { count, error } = await supabase
@@ -1314,7 +1327,7 @@ const requestLocation = () => {
     lastGpsState.value = 'IN_RANGE'
     userDistance.value = 0
     // เช็คอินเข้าสู่ระบบเมื่อเปิดเว็บ
-    if (userProfile.value && deviceId.value) {
+    if (userProfile.value && deviceId.value && checkInSucceededDate !== getTodayDateString()) {
       handleDailyCheckIn()
     }
     return
@@ -1668,7 +1681,7 @@ onMounted(async () => {
       selectedAvatarId.value = data.avatarId || 'boy-cap'
       formSkillLevel.value = data.skillLevel || 'BG'
       localStorage.setItem('badminton_user_profile', JSON.stringify(data))
-      if (gpsStatus.value === 'IN_RANGE') handleDailyCheckIn()
+      if (gpsStatus.value === 'IN_RANGE' && checkInSucceededDate !== getTodayDateString()) handleDailyCheckIn()
     }
   } catch (err) {
     console.error("Error fetching user profile:", err)
@@ -1695,12 +1708,13 @@ onMounted(async () => {
   // 4. Timer ต่างๆ
   countdownInterval = setInterval(() => { now.value = Date.now() }, 1000)
   requestLocation()
-  // check-in เป็นแบบ upsert -> ลองใหม่ทุก tick กันพลาดตอนโปรไฟล์ยังไม่โหลด
+  // check-in เขียน DB เฉพาะวันที่ยังไม่เช็คอินสำเร็จ (กัน quota — ไม่พ่นทุก 30 วิ);
+  // เช็คอิน/เอาต์จริงยังตรวจจับผ่าน lastGpsState ใน requestLocation
   // (A+ 2026-09-22: กันโควตา — ซ่อนแท็บ/จอปิด = ข้ามทุกงาน GPS/เช็คอิน/นับคน จนกว่ากลับมาเปิดให้ครับ)
   gpsInterval = setInterval(() => {
     if (document.visibilityState !== 'visible') return
     requestLocation()
-    if (gpsStatus.value === 'IN_RANGE') handleDailyCheckIn()
+    if (gpsStatus.value === 'IN_RANGE' && checkInSucceededDate !== getTodayDateString()) handleDailyCheckIn()
     loadOnSiteCount()
   }, 30000)
 

@@ -324,17 +324,6 @@
                  :title="c.status === 'IN_PROGRESS' && c.currentQueueId ? 'บันทึกเลขลูกแบดที่ซื้อ' : ''">
               <div class="court-net"></div>
               
-              <div v-if="c.status === 'IN_PROGRESS' && c.currentQueueId" class="absolute top-1.5 right-1.5 z-20 bg-slate-950/80 border border-emerald-500/40 text-emerald-300 rounded-lg px-2 py-1 text-[10px] font-bold flex items-center gap-1 pointer-events-none">
-                <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="6" cy="6" r="3"></circle>
-                  <circle cx="6" cy="18" r="3"></circle>
-                  <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
-                  <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
-                  <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
-                </svg>
-                แตะบันทึกลูกแบด
-              </div>
-              
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
                   <div class="flex flex-col items-center justify-center gap-1 min-w-0">
@@ -579,9 +568,37 @@
       <template v-if="adminTab === 'history'">
         <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <h2 class="text-base font-bold text-white">ประวัติคิวที่เล่นจบแล้ว (วันนี้)</h2>
+            <div class="flex flex-col gap-2">
+              <h2 class="text-base font-bold text-white">ประวัติคิวที่เล่นจบแล้ว <span class="text-emerald-400">({{ formatHistoryLabel() }})</span></h2>
+              <div class="flex items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <span class="text-[11px] text-slate-400 mr-1.5">เลือกวัน</span>
+                  <input
+                    type="date"
+                    class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 [color-scheme:dark]"
+                    :value="historyDate"
+                    :max="historyMaxDate"
+                    @change="historyDate = $event.target.value"
+                  />
+                </label>
+                <button
+                  @click="gotoTodayHistory()"
+                  class="text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow transition"
+                >
+                  ดูของวันนี้
+                </button>
+                <button
+                  @click="historyShuttlecockOnly = !historyShuttlecockOnly"
+                  :class="historyShuttlecockOnly
+                    ? 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow transition'
+                    : 'text-[11px] font-bold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition'"
+                >
+                  เฉพาะคิวซื้อลูกแบด
+                </button>
+              </div>
+            </div>
             <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs px-3 py-2 rounded-xl font-bold">
-              {{ matchHistory.length }} เกม
+              {{ displayedHistory.length }} เกม
             </span>
           </div>
 
@@ -589,31 +606,48 @@
             กำลังโหลดประวัติ...
           </div>
 
-          <div v-else-if="matchHistory.length === 0" class="py-10 text-center text-xs text-slate-500">
-            ยังไม่มีคิวที่เล่นจบแล้วในวันนี้
+          <div v-else-if="displayedHistory.length === 0" class="py-10 text-center text-xs text-slate-500">
+            {{ historyShuttlecockOnly
+              ? 'ไม่มีคิวที่ซื้อลูกแบด' + (isHistoryToday() ? 'ในวันนี้' : 'ในวันที่ ' + formatHistoryLabel())
+              : 'ยังไม่มีคิวที่เล่นจบแล้ว' + (isHistoryToday() ? 'ในวันนี้' : 'ในวันที่ ' + formatHistoryLabel()) }}
           </div>
 
           <div v-else class="space-y-3">
-            <div v-for="m in matchHistory" :key="m.queueId" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
-              <div class="flex justify-end">
-                <span v-if="m.shuttlecockNos" class="text-[11px] font-mono text-amber-300 bg-amber-950/40 border border-amber-700/40 px-2.5 py-1 rounded-lg font-bold mr-auto flex items-center gap-1">
-                  <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="6" cy="6" r="3"></circle>
-                    <circle cx="6" cy="18" r="3"></circle>
-                    <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
-                    <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
-                    <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
-                  </svg>
-                  ลูกแบด {{ m.shuttlecockNos }}
+            <div v-for="m in displayedHistory" :key="m.queueId" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              <div class="flex items-center gap-2">
+                <span v-if="m.shuttlecockNos" class="text-[11px] font-mono text-amber-950 bg-amber-400 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                  ลูกแบดลูก {{ m.shuttlecockNos }}
                 </span>
-                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg font-bold">
+                <span v-if="m.shuttlecockNos && matchAllPaid(m)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1
+                  text-white bg-emerald-500">
+                  <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  จ่ายแล้วทุกคน
+                </span>
+                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg font-bold ml-auto">
                   {{ m.finishedAt }}
                 </span>
               </div>
               <!-- การ์ดผู้เล่นแบบ 2 แถว (จอมือถือ) / แถวเดียว (จอใหญ่ไอแพดขึ้นไป) — เดียวกับการ์ดคิวในหน้าผู้ใช้ -->
+              <!-- วงกลมติ๊กจ่ายเงิน + สถานะ "จ่ายแล้วทุกคน" จะแสดงเฉพาะคิวที่มีเลขลูกแบด (m.shuttlecockNos) เท่านั้น -->
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <button v-for="p in m.players" :key="p.deviceId" @click="openPlayerInfo(p)" title="ดูข้อมูลผู้เล่น"
-                        class="p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99] bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60 cursor-pointer">
+                <button v-for="p in m.players" :key="p.deviceId"
+                        @click="m.shuttlecockNos && togglePlayerPaid(m, p)"
+                        :disabled="!m.shuttlecockNos || savingPaidMatch === m.queueId"
+                        :title="m.shuttlecockNos ? (p.paid ? 'จ่ายเงินแล้ว — แตะเพื่อยกเลิก' : 'ยังไม่จ่าย — แตะเพื่อติ๊กจ่ายเงินแล้ว') : ''"
+                        :class="savingPaidMatch === m.queueId ? 'opacity-60' : 'opacity-100'"
+                        class="relative p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99]
+                          bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60
+                          disabled:cursor-not-allowed cursor-pointer">
+                  <span v-if="m.shuttlecockNos" class="absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition
+                    text-white text-[9px] font-bold
+                    bg-emerald-500 border-emerald-400"
+                    :class="p.paid ? 'opacity-100' : 'opacity-40 border-slate-600 bg-transparent'">
+                    <svg v-if="p.paid" class="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 6 9 17l-5-5"/>
+                    </svg>
+                  </span>
                   <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
                     <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
                   </div>
@@ -749,12 +783,45 @@
       </div>
 
       <div>
-        <label class="block text-xs text-slate-300 font-medium mb-1.5">เลขลูกแบดที่ซื้อ (คั่นหลายเลขด้วยเครื่องหมายจุลภาค เช่น "412, 413")</label>
+        <label class="block text-xs text-slate-300 font-medium mb-1.5">เลขลูกแบดที่ซื้อ </label>
         <input v-model="shuttlecockNosInput" type="text"
-               placeholder="เช่น 412, 413"
                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:border-emerald-500 outline-none"
                @keyup.enter="saveShuttlecock">
-        <p class="text-[10px] text-slate-500 mt-1.5">บันทึกแล้วไม่แสดงบนหน้านี้ — จะปรากฏในประวัติคิวเมื่อจบเกมแล้ว</p>
+      </div>
+
+      <!-- ติ๊กจ่ายเงินระหว่างเล่น: แสดงเฉพาะคิวที่กรอกเลขลูกแบดแล้ว (เลียนแบบหน้า 13) -->
+      <div v-if="shuttlecockNosInput.trim() !== ''" class="space-y-2 pt-1 border-t border-slate-800">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-slate-300 font-medium">ใครจ่ายแล้ว</span>
+          <span v-if="matchShuttlecockAllPaid" class="text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 text-white bg-emerald-500">
+            <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            จ่ายแล้วทุกคน
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button v-for="p in shuttlecockQueuePlayers" :key="p.deviceId"
+                  @click="toggleQueuePlayerPaid(p)"
+                  :disabled="savingQueuePaid"
+                  :title="p.paid ? 'จ่ายเงินแล้ว — แตะเพื่อยกเลิก' : 'ยังไม่จ่าย — แตะเพื่อติ๊กจ่ายเงินแล้ว'"
+                  :class="savingQueuePaid ? 'opacity-60' : 'opacity-100'"
+                  class="relative p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99]
+                    bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60
+                    disabled:cursor-wait cursor-pointer">
+            <span class="absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition
+              text-white text-[9px] font-bold bg-emerald-500 border-emerald-400"
+              :class="p.paid ? 'opacity-100' : 'opacity-40 border-slate-600 bg-transparent'">
+              <svg v-if="p.paid" class="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            </span>
+            <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+              <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+            </div>
+            <span class="truncate">{{ p.name }}</span>
+          </button>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 pt-1">
@@ -1105,8 +1172,12 @@ const isUserInAnyQueue = computed(() => {
 })
 
 // คิวที่แอดมินกดเริ่มเกมแล้ว (IN_PROGRESS) ไม่ต้องแสดงในตารางจัดการคิว — ดูได้จากกราฟิกสนาม
+// กัน mismatch: คิว status=ASSIGNED แต่อยู่บนคอร์ด IN_PROGRESS (swapCourts ไม่ sync สถานะคิว) -> ต้องซ่อนตามคอร์ดด้วย
 const displayQueues = computed(() => {
-  return queues.value.filter(q => q.status !== 'IN_PROGRESS')
+  const playingQIds = new Set(courts.value
+    .filter(c => c.status === 'IN_PROGRESS' && c.currentQueueId)
+    .map(c => c.currentQueueId))
+  return queues.value.filter(q => q.status !== 'IN_PROGRESS' && !playingQIds.has(q.id))
 })
 
 const fullQueues = computed(() => {
@@ -1608,31 +1679,80 @@ const showShuttlecockModal = ref(false)
 const shuttlecockTarget = ref(null)  // { courtNumber, queueId }
 const shuttlecockNosInput = ref('')
 const savingShuttlecock = ref(false)
+const shuttlecockPaidIds = ref([])   // device_id ที่จ่ายแล้วระหว่างเล่น (เก็บที่ queues)
+const savingQueuePaid = ref(false)
+
+// รายชื่อผู้เล่นในคิวที่กำลังเล่น (จาก active_queues_view) + ประกบสถานะจ่ายจาก shuttlecockPaidIds
+const shuttlecockQueuePlayers = computed(() => {
+  const t = shuttlecockTarget.value
+  if (!t) return []
+  const snap = supabaseActiveQueues.value.find(q => q.id === t.queueId) || queues.value.find(q => q.id === t.queueId)
+  const paidSet = new Set(shuttlecockPaidIds.value)
+  return ((snap && Array.isArray(snap.players)) ? snap.players : []).map(p => ({ ...p, paid: paidSet.has(p.deviceId) }))
+})
+
+const matchShuttlecockAllPaid = computed(() =>
+  shuttlecockQueuePlayers.value.length > 0 && shuttlecockQueuePlayers.value.every(p => p.paid)
+)
 
 const openShuttlecockModal = (c) => {
   if (c.status !== 'IN_PROGRESS' || !c.currentQueueId) return
   shuttlecockTarget.value = { courtNumber: c.courtNumber, queueId: c.currentQueueId }
   const snap = supabaseActiveQueues.value.find(q => q.id === c.currentQueueId)
   shuttlecockNosInput.value = (snap && snap.shuttlecock_nos) || ''
+  shuttlecockPaidIds.value = (snap && Array.isArray(snap.paid_player_ids)) ? [...snap.paid_player_ids] : []
   showShuttlecockModal.value = true
 }
 
 const closeShuttlecockModal = () => {
   showShuttlecockModal.value = false
   shuttlecockTarget.value = null
+  shuttlecockNosInput.value = ''
+  shuttlecockPaidIds.value = []
 }
 
 const saveShuttlecock = async () => {
   const t = shuttlecockTarget.value
   if (!t) return
+  const val = shuttlecockNosInput.value.trim()
   savingShuttlecock.value = true
   try {
-    await queueService.saveShuttlecockNumbers(t.queueId, shuttlecockNosInput.value.trim())
+    await queueService.saveShuttlecockNumbers(t.queueId, val)
+    // ล้างเลขลูกแบด = ล้างสถานะจ่ายเงินด้วย (กฎ 13/15 ผูกจ่ายเงินไว้กับ "ต้องมีเลขลูกแบด")
+    // → ลบเลขกลับไปเหมือน "ยังไม่เคยกรอก" สรุปที่จ่ายไว้ก่อนหน้าก็หายด้วย
+    if (val === '') {
+      await queueService.saveQueuePaid(t.queueId, [])
+      shuttlecockPaidIds.value = []
+    }
     closeShuttlecockModal()
   } catch (err) {
     alert(err.message)
   } finally {
     savingShuttlecock.value = false
+  }
+}
+
+// ติ๊ก/ปลด "จ่ายเงินแล้ว" ระหว่างเล่น (เก็บที่ queues.paid_player_ids — เหมือน togglePlayerPaid
+// ในหน้า 13 แต่สำหรับคิวที่ยังเล่นอยู่; จบเกม recordMatchResult คัดลอกไป match_records ให้)
+const toggleQueuePlayerPaid = async (p) => {
+  const t = shuttlecockTarget.value
+  if (!t) return
+  if (p.paid) {
+    if (!window.confirm(`ยกเลิกการจ่ายเงินของ ${p.name}?`)) return
+  } else {
+    if (!window.confirm(`ยืนยันว่า ${p.name} จ่ายเงินแล้ว?`)) return
+  }
+  const newIds = new Set(shuttlecockPaidIds.value)
+  if (p.paid) newIds.delete(p.deviceId)
+  else newIds.add(p.deviceId)
+  savingQueuePaid.value = true
+  try {
+    await queueService.saveQueuePaid(t.queueId, [...newIds])
+    shuttlecockPaidIds.value = [...newIds]
+  } catch (err) {
+    alert(err.message || 'บันทึกสถานะจ่ายเงินไม่สำเร็จ')
+  } finally {
+    savingQueuePaid.value = false
   }
 }
 
@@ -1657,6 +1777,35 @@ const getPlayerSkillLabel = (id) => {
 const matchHistory = ref([])
 const isHistoryLoading = ref(false)
 
+// เลือกวันดูประวัติ: default = วันนี้ (เปิดแทบมาเห็นเหมือนเดิม)
+//   - historyDate เป็น "YYYY-MM-DD" ใน local timezone
+//   - max = วันนี้ (ห้ามเลือกอนาคต)
+const toDateInputValue = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const historyToday = () => toDateInputValue(new Date())
+const historyDate = ref(historyToday())
+const historyMaxDate = historyToday()
+
+// วันที่เลือกเป็นวันนี้ไหม? (สำหรับหัวข้อ "วันนี้")
+const isHistoryToday = () => historyDate.value === historyToday()
+
+// แสดงวันที่เลือกแบบไทย เช่น "วันนี้" / "12 ก.ย. 2569"
+const formatHistoryLabel = () => {
+  if (isHistoryToday()) return 'วันนี้'
+  const [y, m, d] = historyDate.value.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const gotoTodayHistory = () => {
+  historyDate.value = historyToday()
+}
+
+// ตัวกรอง: ดูเฉพาะคิวที่ซื้อลูกแบด (มี record shuttlecock_nos) — กรอง client-side ไม่ต้อง query ใหม่
+const historyShuttlecockOnly = ref(false)
+const displayedHistory = computed(() => {
+  if (!historyShuttlecockOnly.value) return matchHistory.value
+  return matchHistory.value.filter(m => m.shuttlecockNos && String(m.shuttlecockNos).trim() !== '')
+})
+
 const formatMatchTime = (ts) => {
   if (!ts) return '-'
   const d = new Date(ts)
@@ -1667,13 +1816,14 @@ const formatMatchTime = (ts) => {
 const loadMatchHistory = async () => {
   isHistoryLoading.value = true
   try {
-    const start = new Date()
-    start.setHours(0, 0, 0, 0)
+    // ขอบเขต = เที่ยงคืนวันของ historyDate ถึงเที่ยงคืนวันถัดไป (local timezone)
+    const [y, m, d] = historyDate.value.split('-').map(Number)
+    const start = new Date(y, m - 1, d, 0, 0, 0, 0)
     const end = new Date(start.getTime() + 86400000)
 
     const { data: records, error } = await supabase
       .from('match_records')
-      .select('queue_id, player_device_ids, created_at, shuttlecock_nos')
+      .select('queue_id, player_device_ids, created_at, shuttlecock_nos, paid_player_ids')
       .gte('created_at', start.toISOString())
       .lt('created_at', end.toISOString())
       .order('created_at', { ascending: false })
@@ -1692,22 +1842,26 @@ const loadMatchHistory = async () => {
     if (pErr) throw pErr
     const profileMap = new Map((profs || []).map(p => [p.device_id, p]))
 
-    matchHistory.value = records.map(r => ({
-      queueId: r.queue_id,
-      finishedAt: formatMatchTime(r.created_at),
-      shuttlecockNos: r.shuttlecock_nos || '',
-      players: (r.player_device_ids || []).map(did => {
-        const prof = profileMap.get(did)
-        return {
-          deviceId: did,
-          name: prof ? (prof.nickname || 'ผู้เล่น') : 'ไม่พบโปรไฟล์',
-          avatarId: prof && prof.avatar_id ? prof.avatar_id : 'boy-cap',
-          role: prof ? prof.role : undefined,
-          faculty: prof ? prof.faculty : undefined,
-          skillLevel: prof ? prof.skill_level : undefined
-        }
-      })
-    }))
+    matchHistory.value = records.map(r => {
+      const paidSet = new Set(r.paid_player_ids || [])
+      return {
+        queueId: r.queue_id,
+        finishedAt: formatMatchTime(r.created_at),
+        shuttlecockNos: r.shuttlecock_nos || '',
+        players: (r.player_device_ids || []).map(did => {
+          const prof = profileMap.get(did)
+          return {
+            deviceId: did,
+            name: prof ? (prof.nickname || 'ผู้เล่น') : 'ไม่พบโปรไฟล์',
+            avatarId: prof && prof.avatar_id ? prof.avatar_id : 'boy-cap',
+            role: prof ? prof.role : undefined,
+            faculty: prof ? prof.faculty : undefined,
+            skillLevel: prof ? prof.skill_level : undefined,
+            paid: paidSet.has(did)
+          }
+        })
+      }
+    })
   } catch (err) {
     console.error('[AdminView] โหลดประวัติคิวไม่สำเร็จ:', err.message)
     matchHistory.value = []
@@ -1716,9 +1870,45 @@ const loadMatchHistory = async () => {
   }
 }
 
+// ==========================================
+// แทบ "ประวัติคิว": ติ๊กว่าผู้เล่นจ่ายเงินแล้ว (ต่อคน)
+//   - จ่ายเก็บที่ match_records.paid_player_ids (ชุด device_id)
+//   - เมื่อครบทุกคน -> แสดงสถานะ "จ่ายแล้วทุกคน" (ไม่มีปุ่มกด)
+// ==========================================
+const savingPaidMatch = ref(null)
+
+const getAllPaidDeviceIds = (m) => (m.players || []).filter(p => p.paid).map(p => p.deviceId)
+
+const togglePlayerPaid = async (m, p) => {
+  if (p.paid) {
+    if (!window.confirm(`ยกเลิกการจ่ายเงินของ ${p.name}?`)) return
+  } else {
+    if (!window.confirm(`ยืนยันว่า ${p.name} จ่ายเงินแล้ว?`)) return
+  }
+  const newIds = new Set(getAllPaidDeviceIds(m))
+  if (p.paid) newIds.delete(p.deviceId)
+  else newIds.add(p.deviceId)
+  savingPaidMatch.value = m.queueId
+  try {
+    await queueService.saveMatchPaid(m.queueId, [...newIds])
+    p.paid = !p.paid
+  } catch (err) {
+    alert(err.message || 'บันทึกการจ่ายเงินไม่สำเร็จ')
+  } finally {
+    savingPaidMatch.value = null
+  }
+}
+
+const matchAllPaid = (m) => (m.players || []).length > 0 && (m.players || []).every(p => p.paid)
+
 // เข้าสู่แทบประวัติ -> โหลดข้อมูลสด (ประวัติวันนี้อาจมีเกมใหม่ระหว่างอยู่แทบจัดการ)
 watch(adminTab, (v) => {
   if (v === 'history') loadMatchHistory()
+})
+
+// เปลี่ยนวันดูประวัติ -> โหลดใหม่ทันที (ปฎิทินที่เลือกวัน / ปุ่ม "ดูของวันนี้")
+watch(historyDate, () => {
+  if (adminTab.value === 'history') loadMatchHistory()
 })
 
 const finishResultPlayers = computed(() => {
@@ -1759,7 +1949,8 @@ const submitFinishResult = async (isDraw) => {
       queueId: t.queueId,
       playerDeviceIds: finishResultPlayers.value.map(p => p.deviceId),
       winnerDeviceIds: isDraw ? [] : selectedWinners.value,
-      shuttlecockNos: (finishQ && finishQ.shuttlecock_nos) || null
+      shuttlecockNos: (finishQ && finishQ.shuttlecock_nos) || null,
+      paidPlayerIds: (finishQ && finishQ.shuttlecock_nos && Array.isArray(finishQ.paid_player_ids)) ? finishQ.paid_player_ids : []
     })
     showFinishResultModal.value = false
     await queueService.finishMatch(t.courtNumber, t.queueId)

@@ -389,12 +389,40 @@ export class QueueService {
   }
 
   // ==========================================
+  // แอดมิน: บันทึก "ใครจ่ายเงินแล้ว" ในแทบประวัติคิว (เก็บที่ match_records)
+  //   - paidDeviceIds = ชุด device_id ที่จ่ายแล้ว (compare กับ player_device_ids)
+  //   - สลับรายคนได้เสมอ (กด "จ่ายแล้วทุกคน" = ส่ง player_device_ids ครบชุด)
+  // ==========================================
+  async saveMatchPaid(queueId, paidDeviceIds) {
+    const { error } = await this.client
+      .from('match_records')
+      .update({ paid_player_ids: [...new Set((paidDeviceIds || []).filter(Boolean))] })
+      .eq('queue_id', queueId)
+
+    if (error) throw new Error(`บันทึกการจ่ายเงินไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
+  // แอดมิน: บันทึก "ใครจ่ายเงินแล้ว" ระหว่างเล่น (เก็บทีตาราง queues)
+  //   - ใช้ใน modal แตะคอร์ด (เหมือน saveMatchPaid แต่ก่อนจบเกม, ดู 018)
+  //   - ตอนจบเกม recordMatchResult จะคัดลอกไป match_records ให้ (ดู 017/018)
+  // ==========================================
+  async saveQueuePaid(queueId, paidDeviceIds) {
+    const { error } = await this.client
+      .from('queues')
+      .update({ paid_player_ids: [...new Set((paidDeviceIds || []).filter(Boolean))] })
+      .eq('id', queueId)
+
+    if (error) throw new Error(`บันทึกสถานะจ่ายเงินไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
   // แอดมิน: บันทึกผลการแข่งขัน (กด "จบเกม" -> เลือกผู้ชนะ สูงสุด 2 คน หรือเสมอ)
   //   - player_device_ids = สแนปชอตสมาชิกคิวที่ลงสนามทั้งหมด (ใช้คิด "จำนวนครั้งที่เล่น")
   //   - winner_device_ids  = ผู้ชนะ (ว่าง = เสมอ) — ฝั่ง DB การันตีไม่เกิน 2 คน
   //   - queue_id unique -> จบเกมซ้อนไม่บันทึกผลซ้ำ
   // ==========================================
-  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [], shuttlecockNos = null }) {
+  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [], shuttlecockNos = null, paidPlayerIds = [] }) {
     const winners = [...new Set((winnerDeviceIds || []).filter(Boolean))]
     if (winners.length > 2) throw new Error('เลือกผู้ชนะได้สูงสุด 2 คน (เล่นเป็นทีมคู่)')
 
@@ -406,7 +434,8 @@ export class QueueService {
         player_device_ids: [...new Set((playerDeviceIds || []).filter(Boolean))],
         winner_device_ids: winners,
         is_draw: winners.length === 0,
-        shuttlecock_nos: shuttlecockNos || null
+        shuttlecock_nos: shuttlecockNos || null,
+        paid_player_ids: [...new Set((paidPlayerIds || []).filter(Boolean))]
       })
 
     if (error) throw new Error(`บันทึกผลการแข่งขันไม่สำเร็จ: ${error.message}`)
@@ -693,6 +722,13 @@ export class QueueService {
 
     if (getErr) throw getErr
 
+    // เวลาที่แอดมินกดปิดสนาม — ใช้เป็นตัวเดียวกันทั้งคอร์ด/คิว/ผู้เล่น
+    const closeTimeIso = new Date().toISOString()
+    const todayStr = (() => {
+      const d = new Date()
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    })()
+
     // 1) ล้างคิวที่ถูกเรียก (ASSIGNED/กำลังเล่น) บนทุกคอร์ดให้จบเลย
     for (const c of rows || []) {
       if (c.status !== 'AVAILABLE' && c.status !== 'CLOSED' && c.current_queue_id) {
@@ -735,6 +771,19 @@ export class QueueService {
       .neq('status', 'CLOSED')
 
     if (closeErr) throw closeErr
+
+    // 4) ผู้เล่นทุกคนที่เช็คอิน INSIDE วันนี้ -> OUTSIDE ณ เวลาที่แอดมินปิดสนาม
+    //    (daily_checkins มี 1 แถว/คน/วัน — update ทั้งแถวให้ check_out_at = เวลาปิดสนาม)
+    const { error: checkinErr } = await this.client
+      .from('daily_checkins')
+      .update({
+        status: 'OUTSIDE',
+        check_out_at: closeTimeIso
+      })
+      .eq('date', todayStr)
+      .eq('status', 'INSIDE')
+
+    if (checkinErr) throw checkinErr
   }
 
   // ==========================================
