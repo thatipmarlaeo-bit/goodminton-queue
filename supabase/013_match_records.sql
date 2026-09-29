@@ -35,5 +35,14 @@ create index match_records_player_idx on public.match_records using gin (player_
 create index match_records_winner_idx on public.match_records using gin (winner_device_ids);
 create index match_records_queue_idx  on public.match_records (queue_id);
 
+-- เปิดสิทธิ์ให้ anon/authenticated อ่าน-เขียนได้ (แอปนี้ใช้ anon key + ไม่มี real auth)
+grant select, insert, update, delete on table public.match_records to anon, authenticated;
+
+-- ปิด RLS สำหรับตารางนี้ — โมเดลเดียวกับตารางอื่น ๆ ของแอป (ดู 004_gps_filter_toggle.sql)
+-- สาเหตุ: 2026-09-21 แอดมินกดจบเกมไม่ได้ ขึ้น
+--   "new row violates row-level security policy for table match_records"
+-- เพราะตารางถูกสร้างขณะ RLS เปิดและไม่มี policy → ปิด RLS ให้เขียนได้ทันที
+alter table public.match_records disable row level security;
+
 -- รีเฟรช schema cache ของ PostgREST (กันค่าเก่าค้างแบบที่เอกสารแนะนำ)
 notify pgrst, 'reload schema';

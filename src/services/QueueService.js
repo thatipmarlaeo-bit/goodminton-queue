@@ -375,12 +375,54 @@ export class QueueService {
   }
 
   // ==========================================
+  // แอดมิน: บันทึกเลขลูกแบดที่ซื้อของคิวที่กำลังเล่น (IN_PROGRESS)
+  //   - เก็บที่ตาราง queues ระหว่างแข่ง (หน้าไม่ต้องโชว์เลข)
+  //   - ตอนจบเกมจะคัดลอกไป match_records ให้ (ดู recordMatchResult)
+  // ==========================================
+  async saveShuttlecockNumbers(queueId, value) {
+    const { error } = await this.client
+      .from('queues')
+      .update({ shuttlecock_nos: value || null })
+      .eq('id', queueId)
+
+    if (error) throw new Error(`บันทึกเลขลูกแบดไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
+  // แอดมิน: บันทึก "ใครจ่ายเงินแล้ว" ในแทบประวัติคิว (เก็บที่ match_records)
+  //   - paidDeviceIds = ชุด device_id ที่จ่ายแล้ว (compare กับ player_device_ids)
+  //   - สลับรายคนได้เสมอ (กด "จ่ายแล้วทุกคน" = ส่ง player_device_ids ครบชุด)
+  // ==========================================
+  async saveMatchPaid(queueId, paidDeviceIds) {
+    const { error } = await this.client
+      .from('match_records')
+      .update({ paid_player_ids: [...new Set((paidDeviceIds || []).filter(Boolean))] })
+      .eq('queue_id', queueId)
+
+    if (error) throw new Error(`บันทึกการจ่ายเงินไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
+  // แอดมิน: บันทึก "ใครจ่ายเงินแล้ว" ระหว่างเล่น (เก็บทีตาราง queues)
+  //   - ใช้ใน modal แตะคอร์ด (เหมือน saveMatchPaid แต่ก่อนจบเกม, ดู 018)
+  //   - ตอนจบเกม recordMatchResult จะคัดลอกไป match_records ให้ (ดู 017/018)
+  // ==========================================
+  async saveQueuePaid(queueId, paidDeviceIds) {
+    const { error } = await this.client
+      .from('queues')
+      .update({ paid_player_ids: [...new Set((paidDeviceIds || []).filter(Boolean))] })
+      .eq('id', queueId)
+
+    if (error) throw new Error(`บันทึกสถานะจ่ายเงินไม่สำเร็จ: ${error.message}`)
+  }
+
+  // ==========================================
   // แอดมิน: บันทึกผลการแข่งขัน (กด "จบเกม" -> เลือกผู้ชนะ สูงสุด 2 คน หรือเสมอ)
   //   - player_device_ids = สแนปชอตสมาชิกคิวที่ลงสนามทั้งหมด (ใช้คิด "จำนวนครั้งที่เล่น")
   //   - winner_device_ids  = ผู้ชนะ (ว่าง = เสมอ) — ฝั่ง DB การันตีไม่เกิน 2 คน
   //   - queue_id unique -> จบเกมซ้อนไม่บันทึกผลซ้ำ
   // ==========================================
-  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [] }) {
+  async recordMatchResult({ courtNumber, queueId, playerDeviceIds, winnerDeviceIds = [], shuttlecockNos = null, paidPlayerIds = [] }) {
     const winners = [...new Set((winnerDeviceIds || []).filter(Boolean))]
     if (winners.length > 2) throw new Error('เลือกผู้ชนะได้สูงสุด 2 คน (เล่นเป็นทีมคู่)')
 
@@ -391,7 +433,9 @@ export class QueueService {
         court_number: courtNumber,
         player_device_ids: [...new Set((playerDeviceIds || []).filter(Boolean))],
         winner_device_ids: winners,
-        is_draw: winners.length === 0
+        is_draw: winners.length === 0,
+        shuttlecock_nos: shuttlecockNos || null,
+        paid_player_ids: [...new Set((paidPlayerIds || []).filter(Boolean))]
       })
 
     if (error) throw new Error(`บันทึกผลการแข่งขันไม่สำเร็จ: ${error.message}`)
@@ -402,10 +446,41 @@ export class QueueService {
   //   - plays = จำนวนครั้งที่ลงเล่นทั้งหมด (แอดมินกดจบเกมแล้วเท่านั้น)
   //   - wins  = จำนวนครั้งที่ชนะ (ถูกเลือกเป็นผู้ชนะเมื่อจบเกม)
   //   - draws = จำนวนครั้งที่เสมอ (จบเกมแต่ไม่มีใครได้แต้ม)
+  //
+  // hybrid (014): ตัวนับถาวรเก็บที่ profiles (trigger บวกให้ตอน insert
+  //   match_records) → อ่านจาก profiles ก่อน จะลบ match_records เก่า
+  //   สถิติก็ไม่หาย ส่วน fallback นับสดจาก match_records ไว้รองรับช่วงที่
+  //   ยังไม่ได้รัน 014 (คอลัมน์ plays/wins/draws ยังไม่มี)
   // ==========================================
   async getPlayerMatchStats(deviceId) {
     if (!deviceId) return { plays: 0, wins: 0, draws: 0 }
 
+    // 1) อ่านตัวนับถาวรจาก profiles
+    try {
+      const { data, error } = await this.client
+        .from('profiles')
+        .select('plays, wins, draws')
+        .eq('device_id', deviceId)
+        .maybeSingle()
+
+      if (error) throw error
+      if (data) {
+        return {
+          plays: data.plays || 0,
+          wins: data.wins || 0,
+          draws: data.draws || 0
+        }
+      }
+    } catch (err) {
+      // คอลัมน์ยังไม่มี (ยังไม่รัน 014) → ตกไปนับสดจาก match_records
+      console.warn('[QueueService] อ่านสถิติจาก profiles ไม่ได้ ใช้ match_records แทน:', err.message)
+    }
+
+    return this.countMatchStatsFromRecords(deviceId)
+  }
+
+  // fallback: นับสดจาก match_records (ใช้เมื่อยังไม่รัน 014)
+  async countMatchStatsFromRecords(deviceId) {
     const countWhere = async (query) => {
       const { count, error } = await query
       if (error) throw new Error(`ดึงสถิติไม่สำเร็จ: ${error.message}`)
@@ -647,6 +722,13 @@ export class QueueService {
 
     if (getErr) throw getErr
 
+    // เวลาที่แอดมินกดปิดสนาม — ใช้เป็นตัวเดียวกันทั้งคอร์ด/คิว/ผู้เล่น
+    const closeTimeIso = new Date().toISOString()
+    const todayStr = (() => {
+      const d = new Date()
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    })()
+
     // 1) ล้างคิวที่ถูกเรียก (ASSIGNED/กำลังเล่น) บนทุกคอร์ดให้จบเลย
     for (const c of rows || []) {
       if (c.status !== 'AVAILABLE' && c.status !== 'CLOSED' && c.current_queue_id) {
@@ -689,6 +771,19 @@ export class QueueService {
       .neq('status', 'CLOSED')
 
     if (closeErr) throw closeErr
+
+    // 4) ผู้เล่นทุกคนที่เช็คอิน INSIDE วันนี้ -> OUTSIDE ณ เวลาที่แอดมินปิดสนาม
+    //    (daily_checkins มี 1 แถว/คน/วัน — update ทั้งแถวให้ check_out_at = เวลาปิดสนาม)
+    const { error: checkinErr } = await this.client
+      .from('daily_checkins')
+      .update({
+        status: 'OUTSIDE',
+        check_out_at: closeTimeIso
+      })
+      .eq('date', todayStr)
+      .eq('status', 'INSIDE')
+
+    if (checkinErr) throw checkinErr
   }
 
   // ==========================================

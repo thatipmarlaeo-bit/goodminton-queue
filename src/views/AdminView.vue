@@ -262,7 +262,7 @@
             :title="gpsFilterEnabled ? 'เปิดกรองพิกัด' : 'ปิดกรองพิกัด'"
             class="px-3 py-2 rounded-xl transition shadow-md flex items-center justify-center border"
             :class="gpsFilterEnabled
-              ? 'bg-slate-800 hover:bg-slate-700 text-amber-400 border-slate-700'
+              ? 'bg-slate-800 hover:bg-slate-700 text-amber-400   border-slate-700'
               : 'bg-emerald-600 text-white hover:bg-emerald-500 border-emerald-500'">
             <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 21s-7-4.35-7-11a7 7 0 0 1 14 0c0 6.65-7 11-7 11z"></path>
@@ -318,25 +318,47 @@
             </div>
 
             <!-- กราฟิกสนาม -->
-            <div :class="c.status === 'CLOSED' ? 'court-closed-bg border-2 border-slate-700' : 'court-bg border-2 border-emerald-600/60'"
-                 class="rounded-xl h-52 p-1.5 relative flex flex-col justify-between overflow-hidden shadow-inner my-2">
+            <div :class="[c.status === 'CLOSED' ? 'court-closed-bg border-2 border-slate-700' : 'court-bg border-2 border-emerald-600/60', c.status === 'IN_PROGRESS' && c.currentQueueId ? 'cursor-pointer hover:ring-2 hover:ring-emerald-400/40 transition ring-offset-0' : 'cursor-default']"
+                 class="rounded-xl h-52 p-1.5 relative flex flex-col justify-between overflow-hidden shadow-inner my-2"
+                 @click="c.status === 'IN_PROGRESS' && c.currentQueueId ? openShuttlecockModal(c) : null"
+                 :title="c.status === 'IN_PROGRESS' && c.currentQueueId ? 'บันทึกเลขลูกแบดที่ซื้อ' : ''">
               <div class="court-net"></div>
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 0) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 0)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 0))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 0) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 1) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 1)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 1))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 1) }}</p>
+                  </div>
                 </div>
               </div>
               
               <div class="grid grid-cols-2 gap-1.5 h-[calc(50%-4px)] z-10">
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 2) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 2)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 2))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 2) }}</p>
+                  </div>
                 </div>
                 <div class="bg-black/50 backdrop-blur border border-white/10 rounded-lg flex items-center justify-center p-2 text-center text-white">
-                  <p class="text-sm font-black truncate">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 3) }}</p>
+                  <div class="flex flex-col items-center justify-center gap-1 min-w-0">
+                    <div v-if="c.status !== 'CLOSED' && getPlayerAvatar(c, 3)" class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full bg-slate-800 border border-white/20 p-0.5 overflow-hidden">
+                      <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(getPlayerAvatar(c, 3))"></div>
+                    </div>
+                    <p class="text-[11px] md:text-xs font-black text-center truncate max-w-[64px] leading-tight">{{ c.status === 'CLOSED' ? '-' : getPlayerName(c.currentQueueId, 3) }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -375,8 +397,11 @@
                 <button v-if="c.currentQueueId" 
                   @click="openSwapModal(c)"
                   class="col-span-2 px-2.5 py-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 hover:text-white rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center justify-center gap-1.5">
-                  <svg class="w-3.5 h-3.5 stroke-current text-amber-400" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/>
+                  <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m21 16-4 4-4-4"/>
+                    <path d="M17 20V4"/>
+                    <path d="m3 8 4-4 4 4"/>
+                    <path d="M7 4v16"/>
                   </svg>
                   <span>สลับสนาม</span>
                 </button>
@@ -404,6 +429,33 @@
         </div>
       </section>
 
+      <!-- Tab Switcher: จัดการคิว / ประวัติคิว (อยู่ใต้กราฟิกสนาม) -->
+      <div class="flex gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl shadow-md">
+        <button @click="adminTab = 'manage'"
+                :class="adminTab === 'manage' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+                class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
+          <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </svg>
+          <span class="truncate">จัดการคิว</span>
+        </button>
+        <button @click="adminTab = 'history'"
+                :class="adminTab === 'history' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'"
+                class="flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex justify-center items-center gap-2">
+          <svg class="w-4 h-4 shrink-0 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="truncate">ประวัติคิว</span>
+        </button>
+      </div>
+
+      <template v-if="adminTab === 'manage'">
       <!-- ตารางจัดการคิว -->
       <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -428,23 +480,25 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800/60">
-              <tr v-if="queues.length === 0">
+              <tr v-if="displayQueues.length === 0">
                 <td colspan="4" class="p-8 text-center text-slate-500 font-medium">ยังไม่มีข้อมูลการ์ดคิวในระบบ</td>
               </tr>
-              <tr v-for="(q, index) in queues" :key="q.id" class="hover:bg-slate-800/30 transition">
+              <tr v-for="(q, index) in displayQueues" :key="q.id" class="hover:bg-slate-800/30 transition">
                 <td class="p-3 font-bold text-slate-300">#{{ index + 1 }}</td>
                 <td class="p-3">
-                  <div class="flex gap-1.5 flex-wrap items-center">
-                    <span v-for="p in q.players" :key="p.deviceId" class="px-2.5 py-1.5 rounded bg-slate-950 border border-slate-700 text-slate-200 text-[11px] flex items-center gap-1.5 shadow-sm">
-                      <div class="w-3.5 h-3.5 shrink-0" v-html="getAvatarSvg(p.avatarId)"></div>
-                      <span>{{ p.name }}</span>
-                      <button v-if="(q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click="removePlayer(q.id, p.deviceId)" class="text-rose-400 hover:text-white hover:bg-rose-600 rounded-full w-4 h-4 flex items-center justify-center font-bold transition">×</button>
-                    </span>
-                    <div v-if="q.players.length < 4 && (q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" class="flex items-center gap-1">
-                      <button @click="openAddPlayerPicker(q.id)" class="bg-emerald-600/90 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded text-[11px] font-bold shadow transition">
-                        + เพิ่มผู้เล่น
-                      </button>
+                  <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div v-for="p in q.players" :key="p.deviceId" @click="openPlayerInfo(p)" title="ดูข้อมูลผู้เล่น"
+                      class="p-2.5 rounded-xl text-xs flex items-center gap-2 border cursor-pointer transition active:scale-[0.99] bg-slate-950 border-slate-700 text-slate-200 hover:border-emerald-500/60 hover:bg-slate-900">
+                      <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+                        <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+                      </div>
+                      <span class="truncate">{{ p.name }}</span>
+                      <button v-if="(q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click.stop="removePlayer(q.id, p.deviceId)" title="นำออกจากคิว" class="ml-auto shrink-0 text-rose-400 hover:text-white hover:bg-rose-600 rounded-full w-4 h-4 flex items-center justify-center font-bold transition">×</button>
                     </div>
+                    <button v-if="q.players.length < 4 && (q.status === 'WAITING' || q.status === 'ON_HOLD') && !areAllCourtsClosed" @click="openAddPlayerPicker(q.id)"
+                      class="min-h-full p-2.5 rounded-xl text-xs font-bold text-center border border-dashed transition active:scale-[0.99] bg-slate-900/60 border-slate-700 text-emerald-300 hover:bg-emerald-600/20 hover:border-emerald-500/70">
+                      + เพิ่มผู้เล่น
+                    </button>
                   </div>
                 </td>
                 <td class="p-3 text-center">
@@ -469,7 +523,7 @@
                   </span>
                   <span v-else class="flex flex-col items-center gap-0.5">
                     <span class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-full text-[10px] inline-block whitespace-nowrap">
-                      {{ q.players.length === 4 ? `รอเรียก · ${getEstimatedWaitText(q)}` : `รอคน (${q.players.length}/4)` }}
+                      {{ q.players.length === 4 ? `รอ${getEstimatedWaitText(q)}` : `รอคน (${q.players.length}/4)` }}
                     </span>
                   </span>
                 </td>
@@ -483,14 +537,6 @@
                         <path d="M3 3v5h5"/>
                       </svg>
                       <span>กลับเป็นปกติ</span>
-                    </button>
-                    <button v-if="q.status === 'WAITING' && q.players.length === 4" 
-                      @click="givePriority(q.id)" 
-                      class="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-2.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1">
-                      <svg class="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                      </svg>
-                      <span>ดันขึ้นก่อน</span>
                     </button>
                     <button v-if="q.status === 'WAITING' || q.status === 'SKIPPED'" 
                       @click="holdQueue(q.id)" 
@@ -516,6 +562,102 @@
           </table>
         </div>
       </section>
+      </template>
+
+      <!-- แทบประวัติ: คิวที่เล่นจบแล้ววันนี้ (ชื่อ + อวาตาร์ + เวลาจบ; แตะชื่อดูข้อมูลผู้เล่น) -->
+      <template v-if="adminTab === 'history'">
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="flex flex-col gap-2">
+              <h2 class="text-base font-bold text-white">ประวัติคิวที่เล่นจบแล้ว <span class="text-emerald-400">({{ formatHistoryLabel() }})</span></h2>
+              <div class="flex items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <span class="text-[11px] text-slate-400 mr-1.5">เลือกวัน</span>
+                  <input
+                    type="date"
+                    class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 [color-scheme:dark]"
+                    :value="historyDate"
+                    :max="historyMaxDate"
+                    @change="historyDate = $event.target.value"
+                  />
+                </label>
+                <button
+                  @click="gotoTodayHistory()"
+                  class="text-[11px] font-bold px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow transition"
+                >
+                  ดูของวันนี้
+                </button>
+                <button
+                  @click="historyShuttlecockOnly = !historyShuttlecockOnly"
+                  :class="historyShuttlecockOnly
+                    ? 'text-[11px] font-bold px-3 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white shadow transition'
+                    : 'text-[11px] font-bold px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition'"
+                >
+                  เฉพาะคิวซื้อลูกแบด
+                </button>
+              </div>
+            </div>
+            <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-xs px-3 py-2 rounded-xl font-bold">
+              {{ displayedHistory.length }} เกม
+            </span>
+          </div>
+
+          <div v-if="isHistoryLoading" class="py-10 text-center text-xs text-slate-400">
+            กำลังโหลดประวัติ...
+          </div>
+
+          <div v-else-if="displayedHistory.length === 0" class="py-10 text-center text-xs text-slate-500">
+            {{ historyShuttlecockOnly
+              ? 'ไม่มีคิวที่ซื้อลูกแบด' + (isHistoryToday() ? 'ในวันนี้' : 'ในวันที่ ' + formatHistoryLabel())
+              : 'ยังไม่มีคิวที่เล่นจบแล้ว' + (isHistoryToday() ? 'ในวันนี้' : 'ในวันที่ ' + formatHistoryLabel()) }}
+          </div>
+
+          <div v-else class="space-y-3">
+            <div v-for="m in displayedHistory" :key="m.queueId" class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
+              <div class="flex items-center gap-2">
+                <span v-if="m.shuttlecockNos" class="text-[11px] font-mono text-amber-950 bg-amber-400 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
+                  ลูกแบดลูก {{ m.shuttlecockNos }}
+                </span>
+                <span v-if="m.shuttlecockNos && matchAllPaid(m)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1
+                  text-white bg-emerald-500">
+                  <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5"/>
+                  </svg>
+                  จ่ายแล้วทุกคน
+                </span>
+                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-lg font-bold ml-auto">
+                  {{ m.finishedAt }}
+                </span>
+              </div>
+              <!-- การ์ดผู้เล่นแบบ 2 แถว (จอมือถือ) / แถวเดียว (จอใหญ่ไอแพดขึ้นไป) — เดียวกับการ์ดคิวในหน้าผู้ใช้ -->
+              <!-- วงกลมติ๊กจ่ายเงิน + สถานะ "จ่ายแล้วทุกคน" จะแสดงเฉพาะคิวที่มีเลขลูกแบด (m.shuttlecockNos) เท่านั้น -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button v-for="p in m.players" :key="p.deviceId"
+                        @click="m.shuttlecockNos && togglePlayerPaid(m, p)"
+                        :disabled="!m.shuttlecockNos || savingPaidMatch === m.queueId"
+                        :title="m.shuttlecockNos ? (p.paid ? 'จ่ายเงินแล้ว — แตะเพื่อยกเลิก' : 'ยังไม่จ่าย — แตะเพื่อติ๊กจ่ายเงินแล้ว') : ''"
+                        :class="savingPaidMatch === m.queueId ? 'opacity-60' : 'opacity-100'"
+                        class="relative p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99]
+                          bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60
+                          disabled:cursor-not-allowed cursor-pointer">
+                  <span v-if="m.shuttlecockNos" class="absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition
+                    text-white text-[9px] font-bold
+                    bg-emerald-500 border-emerald-400"
+                    :class="p.paid ? 'opacity-100' : 'opacity-40 border-slate-600 bg-transparent'">
+                    <svg v-if="p.paid" class="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 6 9 17l-5-5"/>
+                    </svg>
+                  </span>
+                  <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+                    <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+                  </div>
+                  <span class="truncate">{{ p.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </template>
     </div>
   </div>
 
@@ -555,14 +697,19 @@
       <div class="flex items-center gap-2 pt-2">
         <button @click="showSwapModal = false" class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300">ยกเลิก</button>
         <button @click="handleConfirmSwap" :disabled="isSwapping" class="flex-1 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50 transition shadow-lg flex items-center justify-center gap-1.5">
-          <span v-if="isSwapping" class="animate-spin text-xs">⏳</span>
+          <span v-if="isSwapping" class="animate-spin text-xs">
+            <svg class="w-4 h-4 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+            <path d="M21 3v5h-5"/>
+          </svg>
+                    </span>
           <span>ยืนยันสลับ</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Modal จบเกม: เลือกผู้ชนะ (สูงสุด 2 คน) หรือกดเสมอ -->
+<!-- Modal จบเกม: เลือกผู้ชนะ (สูงสุด 2 คน) หรือกดเสมอ -->
   <div v-if="showFinishResultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-5 space-y-4 shadow-2xl">
       <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
@@ -579,7 +726,7 @@
       <div class="space-y-3">
         <div>
           <p class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
-            <span>ผู้ชนะ (เลือกได้สูงสุด 2 คน — เล่นเป็นทีมคู่)</span>
+            <span>ผู้ชนะ </span>
             <span class="text-[10px] text-emerald-400 font-mono">{{ selectedWinners.length }}/2</span>
           </p>
           <div v-if="finishResultPlayers.length === 0" class="text-center text-xs text-slate-500 py-6 bg-slate-950 rounded-xl border border-slate-800">
@@ -600,8 +747,6 @@
             </button>
           </div>
         </div>
-
-        <p class="text-[10px] text-slate-500 leading-relaxed">กดเลือกชื่อผู้ชนะ แล้วกด "บันทึกผล" หรือถ้าเสมอกัน (ไม่มีใครได้แต้ม) ให้กดปุ่ม "เสมอ"</p>
       </div>
 
       <div class="flex items-center gap-2 pt-1">
@@ -609,12 +754,83 @@
           class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition">ยกเลิก</button>
         <button @click="submitFinishResult(true)" :disabled="savingResult"
           class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-100 disabled:opacity-40 transition shadow">
-          เสมอ (ไม่มีใครได้แต้ม)
+          เสมอ 
         </button>
         <button @click="submitFinishResult(false)" :disabled="savingResult || selectedWinners.length === 0"
           class="flex-1 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-1.5">
           <span v-if="savingResult" class="animate-spin text-xs">⏳</span>
           <span>บันทึกผลและจบเกม</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal บันทึกเลขลูกแบดที่ซื้อ (แตะกราฟิกคอร์ดที่กำลังเล่น) -->
+  <div v-if="showShuttlecockModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+        <svg class="w-5 h-5 stroke-current text-emerald-400" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="6" r="3"></circle>
+          <circle cx="6" cy="18" r="3"></circle>
+          <line x1="20" y1="4" x2="8.12" y2="15.88"></line>
+          <line x1="14.47" y1="14.48" x2="20" y2="20"></line>
+          <line x1="8.12" y1="8.12" x2="12" y2="12"></line>
+        </svg>
+        <div>
+          <h3 class="font-bold text-white text-base">บันทึกเลขลูกแบด</h3>
+          <p class="text-[10px] text-slate-400">คอร์ต {{ shuttlecockTarget?.courtNumber }} · {{ shuttlecockTarget?.queueId }}</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs text-slate-300 font-medium mb-1.5">เลขลูกแบดที่ซื้อ </label>
+        <input v-model="shuttlecockNosInput" type="text"
+               class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:border-emerald-500 outline-none"
+               @keyup.enter="saveShuttlecock">
+      </div>
+
+      <!-- ติ๊กจ่ายเงินระหว่างเล่น: แสดงเฉพาะคิวที่กรอกเลขลูกแบดแล้ว (เลียนแบบหน้า 13) -->
+      <div v-if="shuttlecockNosInput.trim() !== ''" class="space-y-2 pt-1 border-t border-slate-800">
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-slate-300 font-medium">ใครจ่ายแล้ว</span>
+          <span v-if="matchShuttlecockAllPaid" class="text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 text-white bg-emerald-500">
+            <svg class="w-3 h-3 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6 9 17l-5-5"/>
+            </svg>
+            จ่ายแล้วทุกคน
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button v-for="p in shuttlecockQueuePlayers" :key="p.deviceId"
+                  @click="toggleQueuePlayerPaid(p)"
+                  :disabled="savingQueuePaid"
+                  :title="p.paid ? 'จ่ายเงินแล้ว — แตะเพื่อยกเลิก' : 'ยังไม่จ่าย — แตะเพื่อติ๊กจ่ายเงินแล้ว'"
+                  :class="savingQueuePaid ? 'opacity-60' : 'opacity-100'"
+                  class="relative p-2.5 rounded-xl text-xs flex items-center gap-2 border w-full text-left transition active:scale-[0.99]
+                    bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800 hover:border-emerald-500/60
+                    disabled:cursor-wait cursor-pointer">
+            <span class="absolute top-1 right-1 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition
+              text-white text-[9px] font-bold bg-emerald-500 border-emerald-400"
+              :class="p.paid ? 'opacity-100' : 'opacity-40 border-slate-600 bg-transparent'">
+              <svg v-if="p.paid" class="w-2.5 h-2.5 stroke-current" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            </span>
+            <div class="w-6 h-6 shrink-0 rounded-full bg-slate-800 border border-white/10 p-0.5 overflow-hidden">
+              <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(p.avatarId)"></div>
+            </div>
+            <span class="truncate">{{ p.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <button @click="closeShuttlecockModal" :disabled="savingShuttlecock"
+          class="flex-1 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-40 transition">ยกเลิก</button>
+        <button @click="saveShuttlecock" :disabled="savingShuttlecock"
+          class="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-40 transition shadow-lg flex items-center justify-center gap-1.5">
+          <span v-if="savingShuttlecock" class="animate-spin text-xs">⏳</span>
+          <span>บันทึก</span>
         </button>
       </div>
     </div>
@@ -694,16 +910,56 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal ดูข้อมูลผู้เล่นในคิว (แตะที่กล่องชื่อผู้เล่น) -->
+  <div v-if="showPlayerInfoModal && playerInfoTarget" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4">
+      <div class="text-center space-y-3">
+        <div class="mx-auto w-20 h-20 rounded-full bg-slate-800 p-2 border border-slate-700 shadow-inner">
+          <div class="w-full h-full [&>svg]:w-full [&>svg]:h-full" v-html="getAvatarSvg(playerInfoTarget.avatarId)"></div>
+        </div>
+        <div>
+          <p class="text-base font-bold text-white">{{ playerInfoTarget.name }}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">{{ playerInfoTarget.deviceId === deviceId ? 'คุณ' : 'ผู้เล่นในคิว' }}</p>
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">ประเภท</span>
+          <span class="text-xs font-bold text-white">{{ playerInfoTarget.role || 'นิสิต' }}</span>
+        </div>
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">คณะ</span>
+          <span class="text-xs font-bold text-white">{{ playerInfoTarget.faculty || '-' }}</span>
+        </div>
+        <div class="flex items-center justify-between bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-2.5">
+          <span class="text-xs text-slate-400">ระดับฝีมือ</span>
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold text-white">
+            <span v-if="playerInfoTarget.skillLevel" class="h-5 w-5 inline-flex items-center justify-center shrink-0 drop-shadow-sm" v-html="getSkillBadgeSvg(playerInfoTarget.skillLevel)"></span>
+            {{ getPlayerSkillLabel(playerInfoTarget.skillLevel) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="pt-1 flex justify-end">
+        <button @click="showPlayerInfoModal = false" class="bg-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs hover:bg-slate-700 active:scale-95 transition">
+          ปิด
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import html2pdf from 'html2pdf.js'
 // 🚨 ลบการ import Firebase Auth ออกทั้งหมด เพื่อแก้บั๊กข้อมูลชนกัน
 import { supabase } from '../supabase'
 import { AVATAR_PRESETS, getAvatarSvg } from '../components/avatars'
 import { queueService } from '../services/QueueService'
 import { userService } from '../services/UserService'
+import { getOrCreateDeviceId } from '../services/identity'
 import { useTheme } from '../composables/useTheme'
 import { SKILL_LEVELS, getSkillBadgeSvg } from '../components/skillBadges'
 import { readGpsCache, writeGpsCache, isGpsCacheFresh } from '../composables/useGpsCache'
@@ -751,7 +1007,7 @@ const toggleGpsFilter = async () => {
 
 const courts = ref([])
 const queues = ref([])
-const activeTab = ref('booking')
+const adminTab = ref('manage')
 const loading = ref(false)
 const isAlerting = ref(false)
 
@@ -835,34 +1091,34 @@ const getRemainingTime = (court) => {
 }
 
 // ประมาณเวลารอแบบเรียลไทม์ของคิวที่ครบ 4 คน (สถานะ "รอเรียก") — ตรรกะเดียวกับ PlayerView
-//   * คอร์ดกำลังเล่น -> เหลืออีกเท่าไรกว่าจะว่าง (จับเวลา real-time)
-//   * คอร์ดกำลังเรียกคิว -> นับเป็นเต็ม 1 แมตช์
+//   * คอร์ดกำลังเล่น/กำลังเรียก -> ว่างอีกครั้งเวลา (statusUpdatedAt || now) + T (ยึดกับ wall-clock)
 //   * คอร์ดว่าง -> ว่างทันที
 //   * จองคอร์ดที่ว่างเร็วที่สุดให้คิวครบ 4 คนที่มีลำดับอยู่ก่อน (FIFO) ทีละคิว
 //     แต่ละคิวที่แซงหน้า = 1 แมตช์ (20 นาที)
 // ใช้ now.value ที่ tick ทุกวินาที -> นับถอยหลังอัตโนมัติ
 const ESTIMATED_MATCH_MINUTES = 20
+const ESTIMATED_MATCH_MS = ESTIMATED_MATCH_MINUTES * 60 * 1000
 
 const getEstimatedWaitSeconds = (queue) => {
   if (!queue || !Array.isArray(queue.players) || queue.players.length !== 4) return 0
-  const T = ESTIMATED_MATCH_MINUTES * 60
+  const T = ESTIMATED_MATCH_MS
 
-  // รายการเวลาที่แต่ละคอร์ดจะว่าง (วินาที) — 0 = ว่างอยู่แล้ว
-  const freeInSeconds = []
+  // รายการเวลาที่แต่ละคอร์ดจะว่าง (wall-clock ms) — now = ว่างอยู่แล้ว
+  const freeAt = []
   courts.value.forEach(c => {
     if (c.status === 'CLOSED') return
     if (c.status === 'AVAILABLE') {
-      freeInSeconds.push(0)
+      freeAt.push(now.value)
       return
     }
     if (c.status === 'IN_PROGRESS') {
-      const elapsed = Math.max(0, Math.floor((now.value - (c.statusUpdatedAt || Date.now())) / 1000))
-      freeInSeconds.push(Math.max(0, T - elapsed))
+      // แมตช์เล่นเกิน 20 นาทีมาแล้ว (freeAt ตกในอดีต) -> คอร์ดนี้กำลังจะว่างทันที
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value))
       return
     }
-    // CALLING -> คิวที่ถูกเรียกจะเริ่มเล่นจริง -> นับเป็นเต็ม 1 แมตช์
     if (c.status === 'CALLING') {
-      freeInSeconds.push(T)
+      // เรียกคิวแล้ว -> นับเต็ม 1 แมตช์จากตอนนี้ (กัน statusUpdatedAt ค้างอยู่ในอดีต)
+      freeAt.push(Math.max((c.statusUpdatedAt || now.value) + T, now.value + T))
     }
   })
 
@@ -876,13 +1132,14 @@ const getEstimatedWaitSeconds = (queue) => {
   ).length
 
   // จองคอร์ดที่ว่างเร็วที่สุดให้ทีละคิวที่แซงหน้าเรา (ทุกคิวใช้เวลา 1 แมตช์)
-  freeInSeconds.sort((a, b) => a - b)
-  for (let i = 0; i < aheadCount && freeInSeconds.length > 0; i++) {
-    freeInSeconds[0] += T
-    freeInSeconds.sort((a, b) => a - b)
+  freeAt.sort((a, b) => a - b)
+  for (let i = 0; i < aheadCount && freeAt.length > 0; i++) {
+    freeAt[0] += T
+    freeAt.sort((a, b) => a - b)
   }
 
-  return freeInSeconds.length > 0 ? freeInSeconds[0] : 0
+  if (freeAt.length === 0) return 0
+  return Math.max(0, Math.ceil((freeAt[0] - now.value) / 1000))
 }
 
 const getEstimatedWaitText = (queue) => {
@@ -890,7 +1147,7 @@ const getEstimatedWaitText = (queue) => {
   if (secs <= 0) return 'กำลังจะถึงคิว'
   const m = Math.floor(secs / 60)
   const s = secs % 60
-  return `ประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `ประมาณ ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')} น.`
 }
 
 const getPlayElapsed = (court) => {
@@ -912,6 +1169,15 @@ const isUserInAnyQueue = computed(() => {
     if (q.status === 'CANCELLED' || q.status === 'FINISHED') return false
     return Array.isArray(q.players) && q.players.some(p => p.deviceId === deviceId.value)
   })
+})
+
+// คิวที่แอดมินกดเริ่มเกมแล้ว (IN_PROGRESS) ไม่ต้องแสดงในตารางจัดการคิว — ดูได้จากกราฟิกสนาม
+// กัน mismatch: คิว status=ASSIGNED แต่อยู่บนคอร์ด IN_PROGRESS (swapCourts ไม่ sync สถานะคิว) -> ต้องซ่อนตามคอร์ดด้วย
+const displayQueues = computed(() => {
+  const playingQIds = new Set(courts.value
+    .filter(c => c.status === 'IN_PROGRESS' && c.currentQueueId)
+    .map(c => c.currentQueueId))
+  return queues.value.filter(q => q.status !== 'IN_PROGRESS' && !playingQIds.has(q.id))
 })
 
 const fullQueues = computed(() => {
@@ -945,6 +1211,13 @@ const getPlayerName = (court, slotIndex) => {
   return (matchQueue && matchQueue.players && matchQueue.players[slotIndex]) ? matchQueue.players[slotIndex].name : '- ว่าง -'
 }
 
+const getPlayerAvatar = (court, slotIndex) => {
+  if (!court || !court.currentQueueId) return undefined
+  const matchQueue = queues.value.find(q => q.id === court.currentQueueId) || supabaseActiveQueues.value.find(q => q.id === court.currentQueueId)
+  const player = matchQueue && matchQueue.players ? matchQueue.players[slotIndex] : null
+  return player ? player.avatarId : undefined
+}
+
 const getTodayDateString = () => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -957,15 +1230,24 @@ const getNextDayString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const getFormattedTime = () => {
-  return new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
+// คอลัมน์ check_in_at/check_out_at เป็น timestamptz — ต้องเขียน ISO string เท่านั้น
+// (เคยเขียน "HH:MM น." -> Postgres reject -> INSERT เช็คอินพังเงียบทุกครั้ง
+//  -> ไม่มีแถว INSIDE เกิดเลย -> badge/ลิสต์ GPS-filter เป็น 0 เสมอ)
+const getTimestampIso = () => new Date().toISOString()
+
+// format timestamptz -> แสดงผลเป็น "HH:MM น." สำหรับรายงานรายวัน
+const formatCheckinTime = (ts) => {
+  if (!ts) return null
+  const d = Number.isFinite(Number(ts)) ? new Date(Number(ts)) : new Date(ts)
+  if (Number.isNaN(d.getTime())) return String(ts)
+  return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.'
 }
 
 const handleDailyCheckIn = async () => {
   if (!userProfile.value || !deviceId.value) return
   
   const todayStr = getTodayDateString()
-  const nowTime = getFormattedTime()
+  const nowTime = getTimestampIso()
 
   try {
     const { data: existing } = await supabase
@@ -1003,7 +1285,7 @@ const handleDailyCheckOut = async () => {
   try {
     await supabase.from('daily_checkins').update({
       status: 'OUTSIDE',
-      check_out_at: getFormattedTime()
+      check_out_at: getTimestampIso()
     })
     .gte('date', getTodayDateString())
     .lt('date', getNextDayString())
@@ -1217,6 +1499,7 @@ const handleLeaveQueue = async (queueId) => {
 
 const refreshAll = async () => {
   await Promise.all([loadCourtsData(), fetchActiveQueuesFromSupabase()])
+  if (adminTab.value === 'history') loadMatchHistory()
 }
 
 // ==========================================
@@ -1298,8 +1581,8 @@ const openSummaryReport = async () => {
         nickname: r.nickname,
         role: (prof && prof.role) || r.role || 'นิสิต',
         faculty: (prof && prof.faculty) || r.faculty || '-',
-        checkInAt: r.check_in_at,
-        checkOutAt: r.check_out_at || null
+        checkInAt: formatCheckinTime(r.check_in_at),
+        checkOutAt: formatCheckinTime(r.check_out_at)
       }
     })
     dailyCheckinRecords.value = rows
@@ -1390,6 +1673,244 @@ const finishResultTarget = ref(null) // { courtNumber, queueId }
 const selectedWinners = ref([])      // device_id ของผู้ชนะ (สูงสุด 2)
 const savingResult = ref(false)
 
+// บันทึกเลขลูกแบดที่ซื้อ: แตะกราฟิกคอร์ดที่กำลังเล่น -> modal -> บันทึกที่ queues
+//   (หน้าไม่แสดงเลขระหว่างแข่ง; คัดลอกไป match_records ตอนจบเกมดูในประวัติ)
+const showShuttlecockModal = ref(false)
+const shuttlecockTarget = ref(null)  // { courtNumber, queueId }
+const shuttlecockNosInput = ref('')
+const savingShuttlecock = ref(false)
+const shuttlecockPaidIds = ref([])   // device_id ที่จ่ายแล้วระหว่างเล่น (เก็บที่ queues)
+const savingQueuePaid = ref(false)
+
+// รายชื่อผู้เล่นในคิวที่กำลังเล่น (จาก active_queues_view) + ประกบสถานะจ่ายจาก shuttlecockPaidIds
+const shuttlecockQueuePlayers = computed(() => {
+  const t = shuttlecockTarget.value
+  if (!t) return []
+  const snap = supabaseActiveQueues.value.find(q => q.id === t.queueId) || queues.value.find(q => q.id === t.queueId)
+  const paidSet = new Set(shuttlecockPaidIds.value)
+  return ((snap && Array.isArray(snap.players)) ? snap.players : []).map(p => ({ ...p, paid: paidSet.has(p.deviceId) }))
+})
+
+const matchShuttlecockAllPaid = computed(() =>
+  shuttlecockQueuePlayers.value.length > 0 && shuttlecockQueuePlayers.value.every(p => p.paid)
+)
+
+const openShuttlecockModal = (c) => {
+  if (c.status !== 'IN_PROGRESS' || !c.currentQueueId) return
+  shuttlecockTarget.value = { courtNumber: c.courtNumber, queueId: c.currentQueueId }
+  const snap = supabaseActiveQueues.value.find(q => q.id === c.currentQueueId)
+  shuttlecockNosInput.value = (snap && snap.shuttlecock_nos) || ''
+  shuttlecockPaidIds.value = (snap && Array.isArray(snap.paid_player_ids)) ? [...snap.paid_player_ids] : []
+  showShuttlecockModal.value = true
+}
+
+const closeShuttlecockModal = () => {
+  showShuttlecockModal.value = false
+  shuttlecockTarget.value = null
+  shuttlecockNosInput.value = ''
+  shuttlecockPaidIds.value = []
+}
+
+const saveShuttlecock = async () => {
+  const t = shuttlecockTarget.value
+  if (!t) return
+  const val = shuttlecockNosInput.value.trim()
+  savingShuttlecock.value = true
+  try {
+    await queueService.saveShuttlecockNumbers(t.queueId, val)
+    // ล้างเลขลูกแบด = ล้างสถานะจ่ายเงินด้วย (กฎ 13/15 ผูกจ่ายเงินไว้กับ "ต้องมีเลขลูกแบด")
+    // → ลบเลขกลับไปเหมือน "ยังไม่เคยกรอก" สรุปที่จ่ายไว้ก่อนหน้าก็หายด้วย
+    if (val === '') {
+      await queueService.saveQueuePaid(t.queueId, [])
+      shuttlecockPaidIds.value = []
+    }
+    closeShuttlecockModal()
+  } catch (err) {
+    alert(err.message)
+  } finally {
+    savingShuttlecock.value = false
+  }
+}
+
+// ติ๊ก/ปลด "จ่ายเงินแล้ว" ระหว่างเล่น (เก็บที่ queues.paid_player_ids — เหมือน togglePlayerPaid
+// ในหน้า 13 แต่สำหรับคิวที่ยังเล่นอยู่; จบเกม recordMatchResult คัดลอกไป match_records ให้)
+const toggleQueuePlayerPaid = async (p) => {
+  const t = shuttlecockTarget.value
+  if (!t) return
+  if (p.paid) {
+    if (!window.confirm(`ยกเลิกการจ่ายเงินของ ${p.name}?`)) return
+  } else {
+    if (!window.confirm(`ยืนยันว่า ${p.name} จ่ายเงินแล้ว?`)) return
+  }
+  const newIds = new Set(shuttlecockPaidIds.value)
+  if (p.paid) newIds.delete(p.deviceId)
+  else newIds.add(p.deviceId)
+  savingQueuePaid.value = true
+  try {
+    await queueService.saveQueuePaid(t.queueId, [...newIds])
+    shuttlecockPaidIds.value = [...newIds]
+  } catch (err) {
+    alert(err.message || 'บันทึกสถานะจ่ายเงินไม่สำเร็จ')
+  } finally {
+    savingQueuePaid.value = false
+  }
+}
+
+// ดูข้อมูลพื้นฐานของผู้เล่นในคิว (แตะที่กล่องชื่อผู้เล่น -> เปิด modal)
+const showPlayerInfoModal = ref(false)
+const playerInfoTarget = ref(null)
+const openPlayerInfo = (p) => {
+  playerInfoTarget.value = p || null
+  showPlayerInfoModal.value = !!p
+}
+const getPlayerSkillLabel = (id) => {
+  const found = SKILL_LEVELS.find(l => l.id === id)
+  return found ? found.label : (id || 'มือทั่วไป')
+}
+
+// ==========================================
+// แทบ "ประวัติคิว": คิวที่เล่นจบแล้ววันนี้ (จาก match_records)
+//   - match_records เก็บแค่ device_id (สแนปชอต) ไม่เก็บชื่อ -> join เอา
+//     ชื่อ/อวาตาร์/role/faculty/skill จาก profiles ณ เวลาที่เปิดแทบนี้
+//   - ขอบเขต "วันนี้" ใช้ local midnight -> ISO (timestamptz ทำงานตรงกับ UTC)
+// ==========================================
+const matchHistory = ref([])
+const isHistoryLoading = ref(false)
+
+// เลือกวันดูประวัติ: default = วันนี้ (เปิดแทบมาเห็นเหมือนเดิม)
+//   - historyDate เป็น "YYYY-MM-DD" ใน local timezone
+//   - max = วันนี้ (ห้ามเลือกอนาคต)
+const toDateInputValue = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const historyToday = () => toDateInputValue(new Date())
+const historyDate = ref(historyToday())
+const historyMaxDate = historyToday()
+
+// วันที่เลือกเป็นวันนี้ไหม? (สำหรับหัวข้อ "วันนี้")
+const isHistoryToday = () => historyDate.value === historyToday()
+
+// แสดงวันที่เลือกแบบไทย เช่น "วันนี้" / "12 ก.ย. 2569"
+const formatHistoryLabel = () => {
+  if (isHistoryToday()) return 'วันนี้'
+  const [y, m, d] = historyDate.value.split('-').map(Number)
+  return new Date(y, m - 1, d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const gotoTodayHistory = () => {
+  historyDate.value = historyToday()
+}
+
+// ตัวกรอง: ดูเฉพาะคิวที่ซื้อลูกแบด (มี record shuttlecock_nos) — กรอง client-side ไม่ต้อง query ใหม่
+const historyShuttlecockOnly = ref(false)
+const displayedHistory = computed(() => {
+  if (!historyShuttlecockOnly.value) return matchHistory.value
+  return matchHistory.value.filter(m => m.shuttlecockNos && String(m.shuttlecockNos).trim() !== '')
+})
+
+const formatMatchTime = (ts) => {
+  if (!ts) return '-'
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return String(ts)
+  return d.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' น.'
+}
+
+const loadMatchHistory = async () => {
+  isHistoryLoading.value = true
+  try {
+    // ขอบเขต = เที่ยงคืนวันของ historyDate ถึงเที่ยงคืนวันถัดไป (local timezone)
+    const [y, m, d] = historyDate.value.split('-').map(Number)
+    const start = new Date(y, m - 1, d, 0, 0, 0, 0)
+    const end = new Date(start.getTime() + 86400000)
+
+    const { data: records, error } = await supabase
+      .from('match_records')
+      .select('queue_id, player_device_ids, created_at, shuttlecock_nos, paid_player_ids')
+      .gte('created_at', start.toISOString())
+      .lt('created_at', end.toISOString())
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    if (!records || records.length === 0) {
+      matchHistory.value = []
+      return
+    }
+
+    const ids = [...new Set((records || []).flatMap(r => r.player_device_ids || []).filter(Boolean))]
+    const { data: profs, error: pErr } = await supabase
+      .from('profiles')
+      .select('device_id, nickname, avatar_id, role, faculty, skill_level')
+      .in('device_id', ids)
+    if (pErr) throw pErr
+    const profileMap = new Map((profs || []).map(p => [p.device_id, p]))
+
+    matchHistory.value = records.map(r => {
+      const paidSet = new Set(r.paid_player_ids || [])
+      return {
+        queueId: r.queue_id,
+        finishedAt: formatMatchTime(r.created_at),
+        shuttlecockNos: r.shuttlecock_nos || '',
+        players: (r.player_device_ids || []).map(did => {
+          const prof = profileMap.get(did)
+          return {
+            deviceId: did,
+            name: prof ? (prof.nickname || 'ผู้เล่น') : 'ไม่พบโปรไฟล์',
+            avatarId: prof && prof.avatar_id ? prof.avatar_id : 'boy-cap',
+            role: prof ? prof.role : undefined,
+            faculty: prof ? prof.faculty : undefined,
+            skillLevel: prof ? prof.skill_level : undefined,
+            paid: paidSet.has(did)
+          }
+        })
+      }
+    })
+  } catch (err) {
+    console.error('[AdminView] โหลดประวัติคิวไม่สำเร็จ:', err.message)
+    matchHistory.value = []
+  } finally {
+    isHistoryLoading.value = false
+  }
+}
+
+// ==========================================
+// แทบ "ประวัติคิว": ติ๊กว่าผู้เล่นจ่ายเงินแล้ว (ต่อคน)
+//   - จ่ายเก็บที่ match_records.paid_player_ids (ชุด device_id)
+//   - เมื่อครบทุกคน -> แสดงสถานะ "จ่ายแล้วทุกคน" (ไม่มีปุ่มกด)
+// ==========================================
+const savingPaidMatch = ref(null)
+
+const getAllPaidDeviceIds = (m) => (m.players || []).filter(p => p.paid).map(p => p.deviceId)
+
+const togglePlayerPaid = async (m, p) => {
+  if (p.paid) {
+    if (!window.confirm(`ยกเลิกการจ่ายเงินของ ${p.name}?`)) return
+  } else {
+    if (!window.confirm(`ยืนยันว่า ${p.name} จ่ายเงินแล้ว?`)) return
+  }
+  const newIds = new Set(getAllPaidDeviceIds(m))
+  if (p.paid) newIds.delete(p.deviceId)
+  else newIds.add(p.deviceId)
+  savingPaidMatch.value = m.queueId
+  try {
+    await queueService.saveMatchPaid(m.queueId, [...newIds])
+    p.paid = !p.paid
+  } catch (err) {
+    alert(err.message || 'บันทึกการจ่ายเงินไม่สำเร็จ')
+  } finally {
+    savingPaidMatch.value = null
+  }
+}
+
+const matchAllPaid = (m) => (m.players || []).length > 0 && (m.players || []).every(p => p.paid)
+
+// เข้าสู่แทบประวัติ -> โหลดข้อมูลสด (ประวัติวันนี้อาจมีเกมใหม่ระหว่างอยู่แทบจัดการ)
+watch(adminTab, (v) => {
+  if (v === 'history') loadMatchHistory()
+})
+
+// เปลี่ยนวันดูประวัติ -> โหลดใหม่ทันที (ปฎิทินที่เลือกวัน / ปุ่ม "ดูของวันนี้")
+watch(historyDate, () => {
+  if (adminTab.value === 'history') loadMatchHistory()
+})
+
 const finishResultPlayers = computed(() => {
   const t = finishResultTarget.value
   if (!t?.queueId) return []
@@ -1421,11 +1942,15 @@ const submitFinishResult = async (isDraw) => {
   if (!t) return
   savingResult.value = true
   try {
+    // นำเลขลูกแบดที่บันทึกไว้ระหว่างแข่ง (ถ้ามี) ไปเก็บใน match_records เพื่อแสดงในประวัติ
+    const finishQ = queues.value.find(q => q.id === t.queueId) || supabaseActiveQueues.value.find(q => q.id === t.queueId)
     await queueService.recordMatchResult({
       courtNumber: t.courtNumber,
       queueId: t.queueId,
       playerDeviceIds: finishResultPlayers.value.map(p => p.deviceId),
-      winnerDeviceIds: isDraw ? [] : selectedWinners.value
+      winnerDeviceIds: isDraw ? [] : selectedWinners.value,
+      shuttlecockNos: (finishQ && finishQ.shuttlecock_nos) || null,
+      paidPlayerIds: (finishQ && finishQ.shuttlecock_nos && Array.isArray(finishQ.paid_player_ids)) ? finishQ.paid_player_ids : []
     })
     showFinishResultModal.value = false
     await queueService.finishMatch(t.courtNumber, t.queueId)
@@ -1522,30 +2047,12 @@ const reopenCourt = async (c) => {
 }
 
 // ==========================================
-// จัดการคิว: พัก / ดันขึ้น / กลับปกติ / ลบ / จัดการสมาชิก
+// จัดการคิว: พัก / กลับปกติ / ลบ / จัดการสมาชิก
 // ==========================================
 const resumeQueue = async (queueId) => {
   loading.value = true
   try {
     await queueService.updateQueueStatus(queueId, 'WAITING')
-    await refreshAll()
-  } catch (err) {
-    alert(err.message)
-  } finally {
-    loading.value = false
-  }
-}
-
-const givePriority = async (queueId) => {
-  const q = queues.value.find(x => x.id === queueId)
-  if (!q || !q.players || q.players.length < 4) {
-    alert('ต้องให้สมาชิกครบ 4 คนก่อน จึงจะดันขึ้นเป็นสิทธิ์เรียกก่อนได้')
-    return
-  }
-  if (!confirm('ดันคิว ' + queueId + ' ขึ้นเป็นสิทธิ์เรียกก่อน?')) return
-  loading.value = true
-  try {
-    await queueService.updateQueueStatus(queueId, 'SKIPPED')
     await refreshAll()
   } catch (err) {
     alert(err.message)
@@ -1849,13 +2356,9 @@ const stopAlarm = () => {
 }
 
 onMounted(async () => {
-  // 🚨 1. จัดการ Device ID เบ็ดเสร็จในเครื่อง (เลิกพึ่ง Firebase)
-  let localId = localStorage.getItem('badminton_local_device_id')
-  if (!localId) {
-    localId = 'USR-' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-    localStorage.setItem('badminton_local_device_id', localId)
-  }
-  deviceId.value = localId
+  // 🚨 1. จัดการ Device ID เบ็ดเสร็จในเครื่อง (multi-store: cookie/IndexedDB/localStorage
+  //    กัน iOS Safari ที่ตัด localStorage เมื่อปิดแท็บ -> ไม่งั้นกลับมาจะเป็น "ผู้ใช้ใหม่")
+  deviceId.value = await getOrCreateDeviceId()
 
   // 🚨 2. โหลดโปรไฟล์เดิมจากฐานข้อมูล (ถ้ามี)
   try {
@@ -1943,12 +2446,30 @@ const handleScroll = () => {
   }
 }
 
+// รีเฟรชข้อมูลสดเมื่อกลับมาเปิดหน้า/แท็บอีกครั้ง
+// (realtime channel อาจหลุดหรือค้างตอนพักหน้าจอ -> ขอข้อมูลใหม่อีกครั้ง)
+const refreshOnVisible = () => {
+  if (document.visibilityState !== 'visible') return
+  refreshAll()
+  loadGpsFilterSetting()
+  requestLocation()
+}
+
+const refreshOnPageshow = (e) => {
+  // เฉพาะคืนจาก bfcache (back/forward) — ตอนโหลดครั้งแรกไม่ต้องรีเฟรชซ้ำ
+  if (e.persisted) refreshOnVisible()
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
+  document.addEventListener('visibilitychange', refreshOnVisible)
+  window.addEventListener('pageshow', refreshOnPageshow)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('visibilitychange', refreshOnVisible)
+  window.removeEventListener('pageshow', refreshOnPageshow)
 })
 </script>
 <style scoped>
